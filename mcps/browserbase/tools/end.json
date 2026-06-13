@@ -1,0 +1,9 @@
+{
+  "name": "end",
+  "description": "Close the current Browserbase session",
+  "inputSchema": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "properties": {}
+  }
+}

@@ -1,0 +1,43 @@
+{
+  "name": "netlify-deploy-services-updater",
+  "description": "Select and run one of the following Netlify write operations deploy-site",
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "selectSchema": {
+        "type": "object",
+        "properties": {
+          "operation": {
+            "type": "string",
+            "const": "deploy-site"
+          },
+          "params": {
+            "type": "object",
+            "properties": {
+              "siteId": {
+                "type": "string",
+                "description": "provide the site id of the site of this site. If the agent cannot find the siteId, the user must confirm this is a new site. NEVER assume the user wants a new site. Use 'netlify link' CLI command to link to an existing site and get a site id."
+              }
+            },
+            "additionalProperties": false
+          },
+          "llmModelName": {
+            "type": "string"
+          },
+          "aiAgentName": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "operation"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "required": [
+      "selectSchema"
+    ],
+    "additionalProperties": false,
+    "$schema": "http://json-schema.org/draft-07/schema#"
+  }
+}

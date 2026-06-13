@@ -1,0 +1,84 @@
+{
+  "name": "netlify-deploy-services-reader",
+  "description": "Select and run one of the following Netlify read operations (read-only) get-deploy, get-deploy-for-site",
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "selectSchema": {
+        "anyOf": [
+          {
+            "type": "object",
+            "properties": {
+              "operation": {
+                "type": "string",
+                "const": "get-deploy"
+              },
+              "params": {
+                "type": "object",
+                "properties": {
+                  "deployId": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "deployId"
+                ],
+                "additionalProperties": false
+              },
+              "llmModelName": {
+                "type": "string"
+              },
+              "aiAgentName": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "operation"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "operation": {
+                "type": "string",
+                "const": "get-deploy-for-site"
+              },
+              "params": {
+                "type": "object",
+                "properties": {
+                  "siteId": {
+                    "type": "string"
+                  },
+                  "deployId": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "siteId",
+                  "deployId"
+                ],
+                "additionalProperties": false
+              },
+              "llmModelName": {
+                "type": "string"
+              },
+              "aiAgentName": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "operation"
+            ],
+            "additionalProperties": false
+          }
+        ]
+      }
+    },
+    "required": [
+      "selectSchema"
+    ],
+    "additionalProperties": false,
+    "$schema": "http://json-schema.org/draft-07/schema#"
+  }
+}

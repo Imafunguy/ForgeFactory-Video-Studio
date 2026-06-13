@@ -1,0 +1,16 @@
+---
+pid: 5396
+cwd: "C:\Users\fichb\Desktop\ForgeFactory\Working"
+command: "cmd /c \"cd /d C:\\Users\\fichb\\Desktop\\ForgeFactory\\Working && npm run dev -- --port 5001\""
+started_at: 2026-06-13T04:30:00.069Z
+running_for_ms: 45001    
+---
+
+> working@0.0.0 dev
+> vite --port 5001
+
+
+  VITE v8.0.16  ready in 181 ms
+
+  ➜  Local:   http://localhost:5001/
+  ➜  Network: use --host to expose

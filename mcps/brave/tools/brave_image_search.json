@@ -1,0 +1,55 @@
+{
+  "name": "brave_image_search",
+  "description": "\n    Performs an image search using the Brave Search API. Helpful for when you need pictures of people, places, things, graphic design ideas, art inspiration, and more. When relaying results in a markdown environment, it may be helpful to include images in the results (e.g., ![image.title](image.properties.url)).\n",
+  "inputSchema": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "properties": {
+      "query": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 400,
+        "description": "The user's search query. Query cannot be empty. Limited to 400 characters and 50 words."
+      },
+      "country": {
+        "default": "US",
+        "description": "Search query country, where the results come from. The country string is limited to 2 character country codes of supported countries.",
+        "type": "string"
+      },
+      "search_lang": {
+        "default": "en",
+        "description": "Search language preference. The 2 or more character language code for which the search results are provided.",
+        "type": "string"
+      },
+      "count": {
+        "default": 50,
+        "description": "Number of results (1-200, default 50). Combine this parameter with `offset` to paginate search results.",
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 200
+      },
+      "safesearch": {
+        "default": "strict",
+        "description": "Filters search results for adult content. The following values are supported: 'off' - No filtering. 'strict' - Drops all adult content from search results.",
+        "anyOf": [
+          {
+            "type": "string",
+            "const": "off"
+          },
+          {
+            "type": "string",
+            "const": "strict"
+          }
+        ]
+      },
+      "spellcheck": {
+        "default": true,
+        "description": "Whether to spellcheck provided query.",
+        "type": "boolean"
+      }
+    },
+    "required": [
+      "query"
+    ]
+  }
+}

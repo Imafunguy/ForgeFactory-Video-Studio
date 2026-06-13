@@ -1,0 +1,95 @@
+---
+pid: 20980
+cwd: "C:\Users\fichb\Desktop\ForgeFactory\Working"
+command: "cd C:\\Users\\fichb\\Desktop\\ForgeFactory\\Working; npx vite --port 5001"
+started_at: 2026-06-13T04:36:30.177Z
+running_for_ms: 9595003  
+---
+
+  VITE v8.0.16  ready in 277 ms
+
+  ➜  Local:   http://localhost:5001/
+  ➜  Network: use --host to expose
+2:44:08 pm [vite] (client) hmr update /src/App.tsx, /src/index.css
+2:44:08 pm [vite] (client) hmr update /src/App.tsx, /src/index.css
+2:44:08 pm [vite] (client) hmr update /src/App.tsx, /src/index.css
+2:44:08 pm [vite] (client) hmr update /src/index.css
+2:44:08 pm [vite] (client) hmr update /src/index.css
+2:44:08 pm [vite] (client) hmr update /src/index.css
+2:44:08 pm [vite] (client) hmr update /src/index.css
+2:44:09 pm [vite] (client) hmr update /src/index.css
+2:44:09 pm [vite] (client) hmr update /src/index.css
+2:44:09 pm [vite] (client) hmr update /src/index.css
+2:44:09 pm [vite] (client) hmr update /src/index.css
+2:44:09 pm [vite] (client) hmr update /src/index.css
+2:44:15 pm [vite] (client) hmr update /src/App.tsx, /src/index.css
+2:44:15 pm [vite] (client) hmr update /src/index.css
+2:44:15 pm [vite] (client) hmr update /src/App.tsx, /src/index.css
+2:44:15 pm [vite] (client) hmr update /src/index.css
+2:44:15 pm [vite] (client) hmr update /src/index.css
+2:44:15 pm [vite] (client) hmr update /src/index.css
+2:44:15 pm [vite] (client) hmr update /src/index.css
+2:44:16 pm [vite] (client) hmr update /src/index.css
+2:44:16 pm [vite] (client) hmr update /src/index.css
+2:44:16 pm [vite] (client) hmr update /src/index.css
+2:44:16 pm [vite] (client) hmr update /src/index.css
+2:44:16 pm [vite] (client) hmr update /src/index.css
+2:44:16 pm [vite] (client) hmr update /src/index.css
+2:44:16 pm [vite] (client) hmr update /src/index.css
+2:44:16 pm [vite] (client) hmr update /src/index.css
+2:44:16 pm [vite] (client) hmr update /src/index.css
+2:44:17 pm [vite] (client) hmr update /src/index.css
+2:44:17 pm [vite] (client) hmr update /src/index.css
+2:44:17 pm [vite] (client) hmr update /src/index.css
+2:44:21 pm [vite] (client) hmr update /src/index.css
+2:46:59 pm [vite] (client) hmr update /src/App.tsx, /src/index.css
+2:47:00 pm [vite] (client) hmr update /src/index.css
+2:47:00 pm [vite] (client) hmr update /src/App.tsx, /src/index.css
+2:47:00 pm [vite] (client) hmr update /src/index.css
+2:47:05 pm [vite] (client) hmr update /src/index.css
+2:47:05 pm [vite] (client) hmr update /src/index.css
+2:51:04 pm [vite] (client) hmr update /src/index.css, /src/App.tsx, /src/components/layout/AppShell.tsx, /src/components/pages/ModelLab.tsx, /src/components/pages/Settings.tsx, /src/components/pages/Dashboard.tsx, /src/components/VoiceSelector.tsx, /src/components/generation/PipelineUI.tsx, /src/components/ModelSelector.tsx, /src/context/ModelPricingContext.tsx
+2:51:04 pm [vite] (client) hmr update /src/App.tsx, /src/index.css
+2:51:04 pm [vite] (client) hmr update /src/index.css
+2:51:04 pm [vite] (client) hmr update /src/App.tsx, /src/index.css
+2:51:04 pm [vite] (client) hmr invalidate /src/components/ModelSelector.tsx Could not Fast Refresh ("sortModelsForCostTesting" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
+2:51:04 pm [vite] (client) hmr update /src/components/pages/VideoStudio.tsx, /src/components/pages/AgenticPipeline.tsx, /src/components/pages/ModelLab.tsx
+2:51:04 pm [vite] (client) hmr invalidate /src/context/ModelPricingContext.tsx Could not Fast Refresh ("useModelPricing" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
+2:51:04 pm [vite] (client) hmr update /src/App.tsx, /src/components/pages/VideoStudio.tsx, /src/components/pages/AgenticPipeline.tsx, /src/components/pages/ModelLab.tsx, /src/components/pages/Settings.tsx, /src/components/generation/PipelineUI.tsx, /src/components/ModelSelector.tsx
+2:51:04 pm [vite] (client) hmr update /src/index.css
+2:51:04 pm [vite] (client) hmr update /src/index.css
+2:51:04 pm [vite] (client) hmr update /src/index.css
+2:51:04 pm [vite] (client) hmr update /src/index.css
+2:51:08 pm [vite] (client) hmr update /src/App.tsx, /src/index.css
+2:51:08 pm [vite] (client) hmr update /src/index.css
+2:51:08 pm [vite] (client) hmr update /src/App.tsx, /src/index.css
+2:51:13 pm [vite] (client) hmr update /src/App.tsx, /src/index.css
+2:51:13 pm [vite] (client) hmr update /src/index.css
+2:51:13 pm [vite] (client) hmr update /src/index.css
+2:51:13 pm [vite] (client) hmr update /src/index.css
+2:51:14 pm [vite] (client) hmr update /src/index.css
+2:51:14 pm [vite] (client) hmr update /src/index.css
+2:51:14 pm [vite] (client) hmr update /src/index.css
+2:51:14 pm [vite] (client) hmr update /src/index.css
+2:51:14 pm [vite] (client) hmr update /src/index.css
+2:51:14 pm [vite] (client) hmr update /src/index.css
+2:51:14 pm [vite] (client) hmr update /src/index.css
+2:51:14 pm [vite] (client) hmr update /src/index.css
+2:51:14 pm [vite] (client) hmr update /src/index.css
+2:51:15 pm [vite] (client) hmr update /src/index.css
+2:51:15 pm [vite] (client) hmr update /src/index.css
+2:51:15 pm [vite] (client) hmr update /src/index.css
+2:51:15 pm [vite] (client) hmr update /src/index.css
+2:51:15 pm [vite] (client) hmr update /src/index.css
+2:51:15 pm [vite] (client) hmr update /src/index.css
+2:51:15 pm [vite] (client) hmr update /src/index.css
+2:51:15 pm [vite] (client) hmr update /src/index.css
+2:51:15 pm [vite] (client) hmr update /src/index.css
+2:51:16 pm [vite] (client) hmr update /src/index.css
+2:51:16 pm [vite] (client) hmr update /src/index.css
+2:51:16 pm [vite] (client) hmr update /src/index.css
+2:51:16 pm [vite] (client) hmr update /src/index.css
+2:51:16 pm [vite] (client) hmr update /src/index.css
+2:51:16 pm [vite] (client) hmr update /src/index.css
+2:51:16 pm [vite] (client) hmr update /src/index.css
+2:51:16 pm [vite] (client) hmr update /src/index.css

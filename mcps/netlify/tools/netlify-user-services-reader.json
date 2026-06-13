@@ -1,0 +1,38 @@
+{
+  "name": "netlify-user-services-reader",
+  "description": "Select and run one of the following Netlify read operations (read-only) get-user",
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "selectSchema": {
+        "type": "object",
+        "properties": {
+          "operation": {
+            "type": "string",
+            "const": "get-user"
+          },
+          "params": {
+            "type": "object",
+            "properties": {},
+            "additionalProperties": false
+          },
+          "llmModelName": {
+            "type": "string"
+          },
+          "aiAgentName": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "operation"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "required": [
+      "selectSchema"
+    ],
+    "additionalProperties": false,
+    "$schema": "http://json-schema.org/draft-07/schema#"
+  }
+}

@@ -1,0 +1,18 @@
+---
+pid: 2104
+cwd: "C:\Users\fichb\Desktop\ForgeFactory\Working"
+command: "cmd /c \"cd /d C:\\Users\\fichb\\Desktop\\ForgeFactory\\Working && npm run dev -- --port 5001\""
+started_at: 2026-06-13T04:35:05.514Z
+running_for_ms: 9680005  
+---
+At line:1 char:55
++ (cd "C:\\Users\\fichb\\Desktop\\ForgeFactory\\Working" ; cmd /c "cd / ...
++                                                       ~
+Missing closing ')' in expression.
+At line:1 char:146
++ ... rs\fichb\Desktop\ForgeFactory\Working && npm run dev -- --port 5001")
++                                                                         ~
+Unexpected token ')' in expression or statement.
+    + CategoryInfo          : ParserError: (:) [], ParentContainsErrorRecordException
+    + FullyQualifiedErrorId : MissingEndParenthesisInExpression
+ 

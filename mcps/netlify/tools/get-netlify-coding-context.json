@@ -1,0 +1,25 @@
+{
+  "name": "get-netlify-coding-context",
+  "description": "ALWAYS call when writing code. Required step before creating or editing any type of functions, Netlify sdk/library  usage, etc. Use other operations for project management.",
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "creationType": {
+        "type": "string",
+        "enum": [
+          "serverless",
+          "edge-functions",
+          "blobs",
+          "image-cdn",
+          "forms",
+          "db"
+        ]
+      }
+    },
+    "required": [
+      "creationType"
+    ],
+    "additionalProperties": false,
+    "$schema": "http://json-schema.org/draft-07/schema#"
+  }
+}

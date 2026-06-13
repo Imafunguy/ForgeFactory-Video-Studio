@@ -1,0 +1,115 @@
+{
+  "name": "netlify-project-services-reader",
+  "description": "Select and run one of the following Netlify read operations (read-only) get-project, get-projects, get-forms-for-project",
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "selectSchema": {
+        "anyOf": [
+          {
+            "type": "object",
+            "properties": {
+              "operation": {
+                "type": "string",
+                "const": "get-project"
+              },
+              "params": {
+                "type": "object",
+                "properties": {
+                  "siteId": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "siteId"
+                ],
+                "additionalProperties": false
+              },
+              "llmModelName": {
+                "type": "string"
+              },
+              "aiAgentName": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "operation"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "operation": {
+                "type": "string",
+                "const": "get-projects"
+              },
+              "params": {
+                "type": "object",
+                "properties": {
+                  "teamSlug": {
+                    "type": "string"
+                  },
+                  "projectNameSearchValue": {
+                    "type": "string",
+                    "description": "Search for a project by partial name match"
+                  }
+                },
+                "additionalProperties": false
+              },
+              "llmModelName": {
+                "type": "string"
+              },
+              "aiAgentName": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "operation"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "operation": {
+                "type": "string",
+                "const": "get-forms-for-project"
+              },
+              "params": {
+                "type": "object",
+                "properties": {
+                  "siteId": {
+                    "type": "string"
+                  },
+                  "formId": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "siteId"
+                ],
+                "additionalProperties": false
+              },
+              "llmModelName": {
+                "type": "string"
+              },
+              "aiAgentName": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "operation"
+            ],
+            "additionalProperties": false
+          }
+        ]
+      }
+    },
+    "required": [
+      "selectSchema"
+    ],
+    "additionalProperties": false,
+    "$schema": "http://json-schema.org/draft-07/schema#"
+  }
+}

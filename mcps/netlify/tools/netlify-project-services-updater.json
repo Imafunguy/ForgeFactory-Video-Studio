@@ -1,0 +1,304 @@
+{
+  "name": "netlify-project-services-updater",
+  "description": "Select and run one of the following Netlify write operations update-visitor-access-controls, update-forms, manage-form-submissions, update-project-name, manage-env-vars, create-new-project",
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "selectSchema": {
+        "anyOf": [
+          {
+            "type": "object",
+            "properties": {
+              "operation": {
+                "type": "string",
+                "const": "update-visitor-access-controls"
+              },
+              "params": {
+                "type": "object",
+                "properties": {
+                  "siteId": {
+                    "type": "string"
+                  },
+                  "appliesTo": {
+                    "type": "string",
+                    "enum": [
+                      "all-projects",
+                      "non-production-projects"
+                    ],
+                    "description": "Which project context this rule applies to"
+                  },
+                  "requireSSOTeamLogin": {
+                    "type": "boolean"
+                  },
+                  "requirePassword": {
+                    "type": "boolean"
+                  },
+                  "passwordValue": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "siteId",
+                  "appliesTo"
+                ],
+                "additionalProperties": false
+              },
+              "llmModelName": {
+                "type": "string"
+              },
+              "aiAgentName": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "operation"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "operation": {
+                "type": "string",
+                "const": "update-forms"
+              },
+              "params": {
+                "type": "object",
+                "properties": {
+                  "siteId": {
+                    "type": "string"
+                  },
+                  "forms": {
+                    "type": "string",
+                    "enum": [
+                      "enabled",
+                      "disabled"
+                    ]
+                  }
+                },
+                "required": [
+                  "siteId"
+                ],
+                "additionalProperties": false
+              },
+              "llmModelName": {
+                "type": "string"
+              },
+              "aiAgentName": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "operation"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "operation": {
+                "type": "string",
+                "const": "manage-form-submissions"
+              },
+              "params": {
+                "type": "object",
+                "properties": {
+                  "action": {
+                    "type": "string",
+                    "enum": [
+                      "get-submissions",
+                      "delete-submission"
+                    ]
+                  },
+                  "siteId": {
+                    "type": "string"
+                  },
+                  "formId": {
+                    "type": "string"
+                  },
+                  "limit": {
+                    "type": "number",
+                    "default": 20
+                  },
+                  "offset": {
+                    "type": "number",
+                    "default": 0
+                  },
+                  "submissionId": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "action"
+                ],
+                "additionalProperties": false
+              },
+              "llmModelName": {
+                "type": "string"
+              },
+              "aiAgentName": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "operation"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "operation": {
+                "type": "string",
+                "const": "update-project-name"
+              },
+              "params": {
+                "type": "object",
+                "properties": {
+                  "siteId": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": "string",
+                    "pattern": "^[a-z0-9-]+$",
+                    "description": "Name must be hyphenated alphanumeric such as \"my-site\" or \"my-site-2\""
+                  }
+                },
+                "required": [
+                  "siteId",
+                  "name"
+                ],
+                "additionalProperties": false
+              },
+              "llmModelName": {
+                "type": "string"
+              },
+              "aiAgentName": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "operation"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "operation": {
+                "type": "string",
+                "const": "manage-env-vars"
+              },
+              "params": {
+                "type": "object",
+                "properties": {
+                  "getAllEnvVars": {
+                    "type": "boolean"
+                  },
+                  "deleteEnvVar": {
+                    "type": "boolean"
+                  },
+                  "upsertEnvVar": {
+                    "type": "boolean"
+                  },
+                  "siteId": {
+                    "type": "string"
+                  },
+                  "envVarKey": {
+                    "type": "string"
+                  },
+                  "envVarIsSecret": {
+                    "type": "boolean"
+                  },
+                  "envVarValue": {
+                    "type": "string"
+                  },
+                  "newVarScopes": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "enum": [
+                        "all",
+                        "builds",
+                        "functions",
+                        "runtime",
+                        "post_processing"
+                      ]
+                    },
+                    "default": [
+                      "all"
+                    ]
+                  },
+                  "newVarContext": {
+                    "type": "string",
+                    "enum": [
+                      "all",
+                      "dev",
+                      "branch-deploy",
+                      "deploy-preview",
+                      "production",
+                      "branch"
+                    ],
+                    "default": "all"
+                  }
+                },
+                "required": [
+                  "siteId"
+                ],
+                "additionalProperties": false
+              },
+              "llmModelName": {
+                "type": "string"
+              },
+              "aiAgentName": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "operation"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "operation": {
+                "type": "string",
+                "const": "create-new-project"
+              },
+              "params": {
+                "type": "object",
+                "properties": {
+                  "teamSlug": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": "string",
+                    "pattern": "^[a-z0-9-]+$",
+                    "description": "Name must be hyphenated alphanumeric such as \"my-site\" or \"my-site-2\""
+                  }
+                },
+                "additionalProperties": false
+              },
+              "llmModelName": {
+                "type": "string"
+              },
+              "aiAgentName": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "operation"
+            ],
+            "additionalProperties": false
+          }
+        ]
+      }
+    },
+    "required": [
+      "selectSchema"
+    ],
+    "additionalProperties": false,
+    "$schema": "http://json-schema.org/draft-07/schema#"
+  }
+}

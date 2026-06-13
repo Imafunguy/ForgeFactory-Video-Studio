@@ -1,0 +1,14 @@
+{
+  "name": "extract",
+  "description": "Extract data from the page",
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "instruction": {
+        "type": "string"
+      }
+    },
+    "additionalProperties": false,
+    "$schema": "http://json-schema.org/draft-07/schema#"
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "name": "navigate",
+  "description": "Navigate to a URL",
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "url": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "required": [
+      "url"
+    ],
+    "additionalProperties": false,
+    "$schema": "http://json-schema.org/draft-07/schema#"
+  }
+}

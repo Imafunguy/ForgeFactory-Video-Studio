@@ -1,0 +1,86 @@
+{
+  "name": "netlify-extension-services-updater",
+  "description": "Select and run one of the following Netlify write operations change-extension-installation, initialize-database",
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "selectSchema": {
+        "anyOf": [
+          {
+            "type": "object",
+            "properties": {
+              "operation": {
+                "type": "string",
+                "const": "change-extension-installation"
+              },
+              "params": {
+                "type": "object",
+                "properties": {
+                  "extensionSlug": {
+                    "type": "string"
+                  },
+                  "shouldBeInstalled": {
+                    "type": "boolean"
+                  },
+                  "teamId": {
+                    "type": "string",
+                    "description": "Team id of the current project team. If unsure, ask what Netlify team"
+                  },
+                  "siteId": {
+                    "type": "string",
+                    "description": "Site id of the current project site. If unsure, ask what Netlify site"
+                  }
+                },
+                "required": [
+                  "extensionSlug",
+                  "shouldBeInstalled",
+                  "teamId"
+                ],
+                "additionalProperties": false
+              },
+              "llmModelName": {
+                "type": "string"
+              },
+              "aiAgentName": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "operation"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "operation": {
+                "type": "string",
+                "const": "initialize-database"
+              },
+              "params": {
+                "type": "object",
+                "properties": {},
+                "additionalProperties": false
+              },
+              "llmModelName": {
+                "type": "string"
+              },
+              "aiAgentName": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "operation"
+            ],
+            "additionalProperties": false
+          }
+        ]
+      }
+    },
+    "required": [
+      "selectSchema"
+    ],
+    "additionalProperties": false,
+    "$schema": "http://json-schema.org/draft-07/schema#"
+  }
+}

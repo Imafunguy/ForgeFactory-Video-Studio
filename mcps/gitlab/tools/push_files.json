@@ -1,0 +1,7 @@
+{
+  "name": "push_files",
+  "description": "Push multiple files to a GitLab project in a single commit",
+  "inputSchema": {
+    "$schema": "http://json-schema.org/draft-07/schema#"
+  }
+}

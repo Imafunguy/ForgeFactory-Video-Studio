@@ -1,0 +1,961 @@
+---
+pid: 11376
+cwd: "C:\Users\fichb\Desktop\ForgeFactory\Working"
+command: "cd C:\\Users\\fichb\\Desktop\\ForgeFactory\\Working; npx vite --port 5001"
+started_at: 2026-06-13T04:52:06.183Z
+running_for_ms: 8660011  
+---
+
+  VITE v8.0.16  ready in 170 ms
+
+  ➜  Local:   http://localhost:5001/
+  ➜  Network: use --host to expose
+3:04:11 pm [vite] (client) hmr update /src/index.css
+3:04:11 pm [vite] (client) hmr update /src/index.css
+3:04:11 pm [vite] (client) hmr update /src/index.css
+3:04:11 pm [vite] (client) hmr update /src/index.css
+3:04:11 pm [vite] (client) hmr update /src/index.css
+3:04:11 pm [vite] (client) hmr update /src/index.css
+3:04:11 pm [vite] (client) hmr update /src/index.css
+3:04:11 pm [vite] (client) hmr update /src/index.css
+3:04:11 pm [vite] (client) hmr update /src/index.css
+3:04:11 pm [vite] (client) hmr update /src/index.css
+3:04:11 pm [vite] (client) hmr update /src/index.css
+3:04:11 pm [vite] (client) hmr update /src/index.css
+3:04:11 pm [vite] (client) hmr update /src/index.css
+3:04:11 pm [vite] (client) hmr update /src/index.css
+3:04:11 pm [vite] (client) hmr update /src/index.css
+3:04:11 pm [vite] (client) hmr update /src/index.css
+3:04:11 pm [vite] (client) hmr update /src/index.css
+3:04:11 pm [vite] (client) hmr update /src/index.css
+3:04:11 pm [vite] (client) hmr update /src/index.css
+3:04:11 pm [vite] (client) hmr update /src/index.css
+3:04:11 pm [vite] (client) hmr update /src/index.css
+3:04:11 pm [vite] (client) hmr update /src/index.css
+3:04:11 pm [vite] (client) hmr update /src/index.css
+3:04:11 pm [vite] (client) hmr update /src/index.css
+3:04:11 pm [vite] (client) hmr update /src/index.css
+3:04:11 pm [vite] (client) hmr update /src/index.css
+3:04:11 pm [vite] (client) hmr update /src/index.css
+3:04:11 pm [vite] (client) hmr update /src/index.css
+3:04:11 pm [vite] (client) hmr update /src/index.css
+3:04:11 pm [vite] (client) hmr update /src/index.css
+3:04:11 pm [vite] (client) hmr update /src/index.css
+3:04:11 pm [vite] (client) hmr update /src/index.css
+3:04:11 pm [vite] (client) hmr update /src/index.css
+3:04:11 pm [vite] (client) hmr update /src/index.css
+3:04:11 pm [vite] (client) hmr update /src/index.css
+3:04:11 pm [vite] (client) hmr update /src/index.css
+3:04:11 pm [vite] (client) hmr update /src/index.css
+3:04:11 pm [vite] (client) hmr update /src/index.css
+3:04:11 pm [vite] (client) hmr update /src/index.css
+3:04:11 pm [vite] (client) hmr update /src/index.css
+3:04:11 pm [vite] (client) hmr update /src/index.css
+3:04:11 pm [vite] (client) hmr update /src/index.css
+3:04:11 pm [vite] (client) hmr update /src/index.css
+3:04:11 pm [vite] (client) hmr update /src/index.css
+3:04:11 pm [vite] (client) hmr update /src/index.css
+3:04:11 pm [vite] (client) hmr update /src/index.css
+3:04:11 pm [vite] (client) hmr update /src/index.css
+3:04:11 pm [vite] (client) hmr update /src/index.css
+3:04:11 pm [vite] (client) hmr update /src/index.css
+3:04:11 pm [vite] (client) hmr update /src/index.css
+3:04:11 pm [vite] (client) hmr update /src/index.css
+3:04:11 pm [vite] (client) hmr update /src/index.css
+3:04:11 pm [vite] (client) hmr update /src/index.css
+3:04:11 pm [vite] (client) hmr update /src/index.css
+3:04:11 pm [vite] (client) hmr update /src/index.css
+3:04:11 pm [vite] (client) hmr update /src/index.css
+3:04:11 pm [vite] (client) hmr update /src/index.css
+3:04:11 pm [vite] (client) hmr update /src/index.css
+3:04:11 pm [vite] (client) hmr update /src/index.css
+3:04:11 pm [vite] (client) hmr update /src/index.css
+3:04:11 pm [vite] (client) hmr update /src/index.css
+3:04:11 pm [vite] (client) hmr update /src/index.css
+3:04:11 pm [vite] (client) hmr update /src/index.css
+3:04:11 pm [vite] (client) hmr update /src/index.css
+3:04:11 pm [vite] (client) hmr update /src/index.css
+3:04:11 pm [vite] (client) hmr update /src/index.css
+3:04:11 pm [vite] (client) hmr update /src/index.css
+3:04:11 pm [vite] (client) hmr update /src/index.css
+3:04:11 pm [vite] (client) hmr update /src/index.css
+3:04:11 pm [vite] (client) hmr update /src/index.css
+3:04:11 pm [vite] (client) hmr update /src/index.css
+3:04:11 pm [vite] (client) hmr update /src/index.css
+3:04:11 pm [vite] (client) hmr update /src/index.css
+3:04:11 pm [vite] (client) hmr update /src/index.css
+3:04:12 pm [vite] (client) hmr update /src/index.css
+3:04:12 pm [vite] (client) hmr update /src/index.css
+3:04:12 pm [vite] (client) hmr update /src/index.css
+3:04:12 pm [vite] (client) hmr update /src/index.css
+3:04:12 pm [vite] (client) hmr update /src/index.css
+3:04:12 pm [vite] (client) hmr update /src/index.css
+3:04:12 pm [vite] (client) hmr update /src/index.css
+3:04:12 pm [vite] (client) hmr update /src/index.css
+3:04:12 pm [vite] (client) hmr update /src/index.css
+3:04:13 pm [vite] (client) hmr update /src/index.css
+3:04:13 pm [vite] (client) hmr update /src/index.css
+3:04:13 pm [vite] (client) hmr update /src/index.css
+3:04:13 pm [vite] (client) hmr update /src/index.css
+3:04:13 pm [vite] (client) hmr update /src/index.css
+3:04:13 pm [vite] (client) hmr update /src/index.css
+3:04:13 pm [vite] (client) hmr update /src/index.css
+3:04:13 pm [vite] (client) hmr update /src/index.css
+3:04:13 pm [vite] (client) hmr update /src/index.css
+3:04:13 pm [vite] (client) hmr update /src/index.css
+3:04:13 pm [vite] (client) hmr update /src/index.css
+3:04:13 pm [vite] (client) hmr update /src/index.css
+3:04:13 pm [vite] (client) hmr update /src/index.css
+3:04:13 pm [vite] (client) hmr update /src/index.css
+3:04:13 pm [vite] (client) hmr update /src/index.css
+3:04:13 pm [vite] (client) hmr update /src/index.css
+3:04:13 pm [vite] (client) hmr update /src/index.css
+3:04:13 pm [vite] (client) hmr update /src/index.css
+3:04:13 pm [vite] (client) hmr update /src/index.css
+3:04:13 pm [vite] (client) hmr update /src/index.css
+3:04:13 pm [vite] (client) hmr update /src/index.css
+3:04:13 pm [vite] (client) hmr update /src/index.css
+3:04:13 pm [vite] (client) hmr update /src/index.css
+3:04:13 pm [vite] (client) hmr update /src/index.css
+3:04:13 pm [vite] (client) hmr update /src/index.css
+3:04:13 pm [vite] (client) hmr update /src/index.css
+3:04:13 pm [vite] (client) hmr update /src/index.css
+3:04:13 pm [vite] (client) hmr update /src/index.css
+3:04:13 pm [vite] (client) hmr update /src/index.css
+3:04:13 pm [vite] (client) hmr update /src/index.css
+3:04:13 pm [vite] (client) hmr update /src/index.css
+3:04:13 pm [vite] (client) hmr update /src/index.css
+3:04:13 pm [vite] (client) hmr update /src/index.css
+3:04:13 pm [vite] (client) hmr update /src/index.css
+3:04:13 pm [vite] (client) hmr update /src/index.css
+3:04:13 pm [vite] (client) hmr update /src/index.css
+3:04:13 pm [vite] (client) hmr update /src/index.css
+3:04:13 pm [vite] (client) hmr update /src/index.css
+3:04:13 pm [vite] (client) hmr update /src/index.css
+3:04:13 pm [vite] (client) hmr update /src/index.css
+3:04:13 pm [vite] (client) hmr update /src/index.css
+3:04:13 pm [vite] (client) hmr update /src/index.css
+3:04:13 pm [vite] (client) hmr update /src/index.css
+3:04:13 pm [vite] (client) hmr update /src/index.css
+3:04:13 pm [vite] (client) hmr update /src/index.css
+3:04:13 pm [vite] (client) hmr update /src/index.css
+3:04:13 pm [vite] (client) hmr update /src/index.css
+3:04:13 pm [vite] (client) hmr update /src/index.css
+3:04:13 pm [vite] (client) hmr update /src/index.css
+3:04:13 pm [vite] (client) hmr update /src/index.css
+3:04:13 pm [vite] (client) hmr update /src/index.css
+3:04:13 pm [vite] (client) hmr update /src/index.css
+3:04:13 pm [vite] (client) hmr update /src/index.css
+3:04:13 pm [vite] (client) hmr update /src/index.css
+3:04:13 pm [vite] (client) hmr update /src/index.css
+3:04:13 pm [vite] (client) hmr update /src/index.css
+3:04:13 pm [vite] (client) hmr update /src/index.css
+3:04:13 pm [vite] (client) hmr update /src/index.css
+3:04:13 pm [vite] (client) hmr update /src/index.css
+3:04:13 pm [vite] (client) hmr update /src/index.css
+3:04:13 pm [vite] (client) hmr update /src/index.css
+3:04:13 pm [vite] (client) hmr update /src/index.css
+3:04:13 pm [vite] (client) hmr update /src/index.css
+3:04:13 pm [vite] (client) hmr update /src/index.css
+3:04:13 pm [vite] (client) hmr update /src/index.css
+3:04:13 pm [vite] (client) hmr update /src/index.css
+3:04:13 pm [vite] (client) hmr update /src/index.css
+3:04:13 pm [vite] (client) hmr update /src/index.css
+3:04:13 pm [vite] (client) hmr update /src/index.css
+3:04:13 pm [vite] (client) hmr update /src/index.css
+3:04:13 pm [vite] (client) hmr update /src/index.css
+3:04:13 pm [vite] (client) hmr update /src/index.css
+3:04:13 pm [vite] (client) hmr update /src/index.css
+3:04:13 pm [vite] (client) hmr update /src/index.css
+3:04:13 pm [vite] (client) hmr update /src/index.css
+3:04:13 pm [vite] (client) hmr update /src/index.css
+3:04:13 pm [vite] (client) hmr update /src/index.css
+3:04:13 pm [vite] (client) hmr update /src/index.css
+3:04:13 pm [vite] (client) hmr update /src/index.css
+3:04:13 pm [vite] (client) hmr update /src/index.css
+3:04:13 pm [vite] (client) hmr update /src/index.css
+3:04:13 pm [vite] (client) hmr update /src/index.css
+3:04:13 pm [vite] (client) hmr update /src/index.css
+3:04:13 pm [vite] (client) hmr update /src/index.css
+3:04:13 pm [vite] (client) hmr update /src/index.css
+3:04:13 pm [vite] (client) hmr update /src/index.css
+3:04:13 pm [vite] (client) hmr update /src/index.css
+3:04:13 pm [vite] (client) hmr update /src/index.css
+3:04:13 pm [vite] (client) hmr update /src/index.css
+3:04:13 pm [vite] (client) hmr update /src/index.css
+3:04:13 pm [vite] (client) hmr update /src/index.css
+3:04:13 pm [vite] (client) hmr update /src/index.css
+3:04:13 pm [vite] (client) hmr update /src/index.css
+3:04:13 pm [vite] (client) hmr update /src/index.css
+3:04:13 pm [vite] (client) hmr update /src/index.css
+3:04:13 pm [vite] (client) hmr update /src/index.css
+3:04:13 pm [vite] (client) hmr update /src/index.css
+3:04:13 pm [vite] (client) hmr update /src/index.css
+3:04:13 pm [vite] (client) hmr update /src/index.css
+3:04:13 pm [vite] (client) hmr update /src/index.css
+3:04:13 pm [vite] (client) hmr update /src/index.css
+3:04:13 pm [vite] (client) hmr update /src/index.css
+3:04:13 pm [vite] (client) hmr update /src/index.css
+3:04:13 pm [vite] (client) hmr update /src/index.css
+3:04:14 pm [vite] (client) hmr update /src/index.css
+3:04:14 pm [vite] (client) hmr update /src/index.css
+3:04:14 pm [vite] (client) hmr update /src/index.css
+3:04:14 pm [vite] (client) hmr update /src/index.css
+3:04:14 pm [vite] (client) hmr update /src/index.css
+3:04:14 pm [vite] (client) hmr update /src/index.css
+3:04:14 pm [vite] (client) hmr update /src/index.css
+3:04:14 pm [vite] (client) hmr update /src/index.css
+3:04:14 pm [vite] (client) hmr update /src/index.css
+3:04:14 pm [vite] (client) hmr update /src/index.css
+3:04:14 pm [vite] (client) hmr update /src/index.css
+3:04:14 pm [vite] (client) hmr update /src/index.css
+3:04:14 pm [vite] (client) hmr update /src/index.css
+3:04:14 pm [vite] (client) hmr update /src/index.css
+3:04:14 pm [vite] (client) hmr update /src/index.css
+3:04:14 pm [vite] (client) hmr update /src/index.css
+3:04:14 pm [vite] (client) hmr update /src/index.css
+3:04:14 pm [vite] (client) hmr update /src/index.css
+3:04:14 pm [vite] (client) hmr update /src/index.css
+3:04:14 pm [vite] (client) hmr update /src/index.css
+3:04:14 pm [vite] (client) hmr update /src/index.css
+3:04:14 pm [vite] (client) hmr update /src/index.css
+3:04:14 pm [vite] (client) hmr update /src/index.css
+3:04:14 pm [vite] (client) hmr update /src/index.css
+3:04:14 pm [vite] (client) hmr update /src/index.css
+3:04:14 pm [vite] (client) hmr update /src/index.css
+3:04:14 pm [vite] (client) hmr update /src/index.css
+3:04:14 pm [vite] (client) hmr update /src/index.css
+3:04:14 pm [vite] (client) hmr update /src/index.css
+3:04:14 pm [vite] (client) hmr update /src/index.css
+3:04:14 pm [vite] (client) hmr update /src/index.css
+3:04:14 pm [vite] (client) hmr update /src/index.css
+3:04:14 pm [vite] (client) hmr update /src/index.css
+3:04:14 pm [vite] (client) hmr update /src/index.css
+3:04:14 pm [vite] (client) hmr update /src/index.css
+3:04:14 pm [vite] (client) hmr update /src/index.css
+3:04:14 pm [vite] (client) hmr update /src/index.css
+3:04:14 pm [vite] (client) hmr update /src/index.css
+3:04:14 pm [vite] (client) hmr update /src/index.css
+3:04:14 pm [vite] (client) hmr update /src/index.css
+3:04:14 pm [vite] (client) hmr update /src/index.css
+3:04:14 pm [vite] (client) hmr update /src/index.css
+3:04:15 pm [vite] (client) hmr update /src/index.css
+3:04:15 pm [vite] (client) hmr update /src/index.css
+3:04:15 pm [vite] (client) hmr update /src/index.css
+3:04:15 pm [vite] (client) hmr update /src/index.css
+3:04:15 pm [vite] (client) hmr update /src/index.css
+3:04:15 pm [vite] (client) hmr update /src/index.css
+3:04:15 pm [vite] (client) hmr update /src/index.css
+3:04:15 pm [vite] (client) hmr update /src/index.css
+3:04:15 pm [vite] (client) hmr update /src/index.css
+3:04:15 pm [vite] (client) hmr update /src/index.css
+3:04:15 pm [vite] (client) hmr update /src/index.css
+3:04:15 pm [vite] (client) hmr update /src/index.css
+3:04:15 pm [vite] (client) hmr update /src/index.css
+3:04:15 pm [vite] (client) hmr update /src/index.css
+3:04:15 pm [vite] (client) hmr update /src/index.css
+3:04:15 pm [vite] (client) hmr update /src/index.css
+3:04:15 pm [vite] (client) hmr update /src/index.css
+3:04:15 pm [vite] (client) hmr update /src/index.css
+3:04:15 pm [vite] (client) hmr update /src/index.css
+3:04:15 pm [vite] (client) hmr update /src/index.css
+3:04:15 pm [vite] (client) hmr update /src/index.css
+3:04:15 pm [vite] (client) hmr update /src/index.css
+3:04:15 pm [vite] (client) hmr update /src/index.css
+3:04:15 pm [vite] (client) hmr update /src/index.css
+3:04:15 pm [vite] (client) hmr update /src/index.css
+3:04:15 pm [vite] (client) hmr update /src/index.css
+3:04:15 pm [vite] (client) hmr update /src/index.css
+3:04:15 pm [vite] (client) hmr update /src/index.css
+3:04:15 pm [vite] (client) hmr update /src/index.css
+3:04:15 pm [vite] (client) hmr update /src/index.css
+3:04:15 pm [vite] (client) hmr update /src/index.css
+3:04:15 pm [vite] (client) hmr update /src/index.css
+3:04:15 pm [vite] (client) hmr update /src/index.css
+3:04:15 pm [vite] (client) hmr update /src/index.css
+3:04:15 pm [vite] (client) hmr update /src/index.css
+3:04:15 pm [vite] (client) hmr update /src/index.css
+3:04:15 pm [vite] (client) hmr update /src/index.css
+3:04:15 pm [vite] (client) hmr update /src/index.css
+3:04:15 pm [vite] (client) hmr update /src/index.css
+3:04:15 pm [vite] (client) hmr update /src/index.css
+3:04:15 pm [vite] (client) hmr update /src/index.css
+3:04:15 pm [vite] (client) hmr update /src/index.css
+3:04:15 pm [vite] (client) hmr update /src/index.css
+3:04:15 pm [vite] (client) hmr update /src/index.css
+3:04:15 pm [vite] (client) hmr update /src/index.css
+3:04:15 pm [vite] (client) hmr update /src/index.css
+3:04:15 pm [vite] (client) hmr update /src/index.css
+3:04:15 pm [vite] (client) hmr update /src/index.css
+3:04:15 pm [vite] (client) hmr update /src/index.css
+3:04:15 pm [vite] (client) hmr update /src/index.css
+3:04:15 pm [vite] (client) hmr update /src/index.css
+3:04:15 pm [vite] (client) hmr update /src/index.css
+3:04:15 pm [vite] (client) hmr update /src/index.css
+3:04:15 pm [vite] (client) hmr update /src/index.css
+3:04:15 pm [vite] (client) hmr update /src/index.css
+3:04:15 pm [vite] (client) hmr update /src/index.css
+3:04:15 pm [vite] (client) hmr update /src/index.css
+3:04:15 pm [vite] (client) hmr update /src/index.css
+3:04:15 pm [vite] (client) hmr update /src/index.css
+3:04:15 pm [vite] (client) hmr update /src/index.css
+3:04:15 pm [vite] (client) hmr update /src/index.css
+3:04:15 pm [vite] (client) hmr update /src/index.css
+3:04:15 pm [vite] (client) hmr update /src/index.css
+3:04:15 pm [vite] (client) hmr update /src/index.css
+3:04:15 pm [vite] (client) hmr update /src/index.css
+3:04:15 pm [vite] (client) hmr update /src/index.css
+3:04:15 pm [vite] (client) hmr update /src/index.css
+3:04:15 pm [vite] (client) hmr update /src/index.css
+3:04:15 pm [vite] (client) hmr update /src/index.css
+3:04:15 pm [vite] (client) hmr update /src/index.css
+3:04:15 pm [vite] (client) hmr update /src/index.css
+3:04:15 pm [vite] (client) hmr update /src/index.css
+3:04:15 pm [vite] (client) hmr update /src/index.css
+3:04:15 pm [vite] (client) hmr update /src/index.css
+3:04:15 pm [vite] (client) hmr update /src/index.css
+3:04:15 pm [vite] (client) hmr update /src/index.css
+3:04:15 pm [vite] (client) hmr update /src/index.css
+3:04:15 pm [vite] (client) hmr update /src/index.css
+3:04:15 pm [vite] (client) hmr update /src/index.css
+3:04:16 pm [vite] (client) hmr update /src/index.css
+3:04:16 pm [vite] (client) hmr update /src/index.css
+3:04:16 pm [vite] (client) hmr update /src/index.css
+3:04:16 pm [vite] (client) hmr update /src/index.css
+3:04:16 pm [vite] (client) hmr update /src/index.css
+3:04:16 pm [vite] (client) hmr update /src/index.css
+3:04:16 pm [vite] (client) hmr update /src/index.css
+3:04:16 pm [vite] (client) hmr update /src/index.css
+3:04:17 pm [vite] (client) hmr update /src/index.css
+3:04:17 pm [vite] (client) hmr update /src/index.css
+3:05:39 pm [vite] (client) hmr update /src/App.tsx, /src/index.css
+3:05:39 pm [vite] Internal server error: Transform failed with 1 error:
+
+[PARSE_ERROR] Logical expressions and coalesce expressions cannot be mixed
+    ╭─[ src/lib/videoPipelinePrompts.ts:87:18 ]
+    │
+ 87 │     kineticHook: preset.kineticHook ?? project.name.split(/(?=[A-Z])/).join(' ').slice(0, 14).toUpperCase() || 'GROW FASTER',
+    │                  ─────────────────────────────────────────────────────┬─────────────────────────────────────────────────────  
+    │                                                                       ╰─────────────────────────────────────────────────────── 
+    │ 
+    │ Help: Wrap either expression by parentheses
+────╯
+
+  Plugin: vite:oxc
+  File: C:/Users/fichb/Desktop/ForgeFactory/Working/src/lib/videoPipelinePrompts.ts
+      at transformWithOxc (file:///C:/Users/fichb/Desktop/ForgeFactory/Working/node_modules/vite/dist/node/chunks/node.js:3344:19)
+      at TransformPluginContext.transform (file:///C:/Users/fichb/Desktop/ForgeFactory/Working/node_modules/vite/dist/node/chunks/node.js:3415:26)
+      at EnvironmentPluginContainer.transform (file:///C:/Users/fichb/Desktop/ForgeFactory/Working/node_modules/vite/dist/node/chunks/node.js:30387:51)
+      at async loadAndTransform (file:///C:/Users/fichb/Desktop/ForgeFactory/Working/node_modules/vite/dist/node/chunks/node.js:24646:26)
+3:05:39 pm [vite] (client) hmr update /src/index.css
+3:05:39 pm [vite] (client) hmr update /src/App.tsx, /src/index.css
+3:05:39 pm [vite] (client) Pre-transform error: Transform failed with 1 error:
+
+[PARSE_ERROR] Logical expressions and coalesce expressions cannot be mixed
+    ╭─[ src/lib/videoPipelinePrompts.ts:87:18 ]
+    │
+ 87 │     kineticHook: preset.kineticHook ?? project.name.split(/(?=[A-Z])/).join(' ').slice(0, 14).toUpperCase() || 'GROW FASTER',
+    │                  ─────────────────────────────────────────────────────┬─────────────────────────────────────────────────────  
+    │                                                                       ╰─────────────────────────────────────────────────────── 
+    │ 
+    │ Help: Wrap either expression by parentheses
+────╯
+
+  Plugin: vite:oxc
+  File: C:/Users/fichb/Desktop/ForgeFactory/Working/src/lib/videoPipelinePrompts.ts
+3:05:39 pm [vite] (client) hmr update /src/index.css
+3:05:39 pm [vite] (client) hmr update /src/App.tsx, /src/index.css
+3:05:39 pm [vite] (client) Pre-transform error: Transform failed with 1 error:
+
+[PARSE_ERROR] Logical expressions and coalesce expressions cannot be mixed
+    ╭─[ src/lib/videoPipelinePrompts.ts:87:18 ]
+    │
+ 87 │     kineticHook: preset.kineticHook ?? project.name.split(/(?=[A-Z])/).join(' ').slice(0, 14).toUpperCase() || 'GROW FASTER',
+    │                  ─────────────────────────────────────────────────────┬─────────────────────────────────────────────────────  
+    │                                                                       ╰─────────────────────────────────────────────────────── 
+    │ 
+    │ Help: Wrap either expression by parentheses
+────╯
+
+  Plugin: vite:oxc
+  File: C:/Users/fichb/Desktop/ForgeFactory/Working/src/lib/videoPipelinePrompts.ts
+3:05:39 pm [vite] (client) hmr update /src/index.css
+3:05:39 pm [vite] (client) hmr update /src/index.css
+3:05:39 pm [vite] (client) hmr update /src/index.css
+3:05:39 pm [vite] (client) hmr update /src/index.css
+3:05:39 pm [vite] (client) hmr update /src/index.css
+3:05:39 pm [vite] (client) hmr update /src/index.css
+3:05:39 pm [vite] (client) hmr update /src/index.css
+3:05:40 pm [vite] (client) hmr update /src/index.css
+3:05:40 pm [vite] (client) hmr update /src/index.css
+3:05:40 pm [vite] (client) hmr update /src/index.css
+3:05:40 pm [vite] (client) hmr update /src/index.css
+3:05:40 pm [vite] (client) hmr update /src/index.css
+3:05:40 pm [vite] (client) hmr update /src/index.css
+3:05:40 pm [vite] (client) hmr update /src/index.css
+3:05:40 pm [vite] (client) hmr update /src/index.css
+3:05:40 pm [vite] (client) hmr update /src/index.css
+3:05:41 pm [vite] (client) hmr update /src/index.css
+3:05:41 pm [vite] (client) hmr update /src/index.css
+3:05:45 pm [vite] (client) hmr update /src/App.tsx, /src/components/pages/VideoStudio.tsx, /src/components/pages/AgenticPipeline.tsx, /src/index.css
+3:05:45 pm [vite] (client) hmr update /src/index.css
+3:05:45 pm [vite] (client) hmr update /src/index.css
+3:05:45 pm [vite] (client) hmr update /src/index.css
+3:05:45 pm [vite] (client) hmr update /src/index.css
+3:05:45 pm [vite] (client) hmr update /src/index.css
+3:05:45 pm [vite] (client) hmr update /src/index.css
+3:05:45 pm [vite] (client) hmr update /src/index.css
+3:05:46 pm [vite] (client) hmr update /src/index.css
+3:05:46 pm [vite] (client) hmr update /src/index.css
+3:05:46 pm [vite] (client) hmr update /src/index.css
+3:05:46 pm [vite] (client) hmr update /src/index.css
+3:05:46 pm [vite] (client) hmr update /src/index.css
+3:05:46 pm [vite] (client) hmr update /src/index.css
+3:05:46 pm [vite] (client) hmr update /src/index.css
+3:05:46 pm [vite] (client) hmr update /src/index.css
+3:05:46 pm [vite] (client) hmr update /src/index.css
+3:05:46 pm [vite] (client) hmr update /src/index.css
+3:05:47 pm [vite] (client) hmr update /src/index.css
+3:05:47 pm [vite] (client) hmr update /src/index.css
+3:05:47 pm [vite] (client) hmr update /src/index.css
+3:05:47 pm [vite] (client) hmr update /src/index.css
+3:05:47 pm [vite] (client) hmr update /src/index.css
+3:05:47 pm [vite] (client) hmr update /src/index.css
+3:05:47 pm [vite] (client) hmr update /src/index.css
+3:05:47 pm [vite] (client) hmr update /src/index.css
+3:05:47 pm [vite] (client) hmr update /src/index.css
+3:05:48 pm [vite] (client) hmr update /src/index.css
+3:05:48 pm [vite] (client) hmr update /src/index.css
+3:05:48 pm [vite] (client) hmr update /src/index.css
+3:05:48 pm [vite] (client) hmr update /src/index.css
+3:05:48 pm [vite] (client) hmr update /src/index.css
+3:05:48 pm [vite] (client) hmr update /src/index.css
+3:05:48 pm [vite] (client) hmr update /src/index.css
+3:05:48 pm [vite] (client) hmr update /src/index.css
+3:05:48 pm [vite] (client) hmr update /src/index.css
+3:05:49 pm [vite] (client) hmr update /src/index.css
+3:05:49 pm [vite] (client) hmr update /src/index.css
+3:05:49 pm [vite] (client) hmr update /src/index.css
+3:05:49 pm [vite] (client) hmr update /src/index.css
+3:05:49 pm [vite] (client) hmr update /src/index.css
+3:05:49 pm [vite] (client) hmr update /src/index.css
+3:05:49 pm [vite] (client) hmr update /src/index.css
+3:05:49 pm [vite] (client) hmr update /src/index.css
+3:05:49 pm [vite] (client) hmr update /src/index.css
+3:05:50 pm [vite] (client) hmr update /src/index.css
+3:05:50 pm [vite] (client) hmr update /src/index.css
+3:05:50 pm [vite] (client) hmr update /src/index.css
+3:05:50 pm [vite] (client) hmr update /src/index.css
+3:05:50 pm [vite] (client) hmr update /src/index.css
+3:05:50 pm [vite] (client) hmr update /src/index.css
+3:05:50 pm [vite] (client) hmr update /src/index.css
+3:05:50 pm [vite] (client) hmr update /src/index.css
+3:05:50 pm [vite] (client) hmr update /src/index.css
+3:05:50 pm [vite] (client) hmr update /src/index.css
+3:05:51 pm [vite] (client) hmr update /src/index.css
+3:05:51 pm [vite] (client) hmr update /src/index.css
+3:05:51 pm [vite] (client) hmr update /src/index.css
+3:05:51 pm [vite] (client) hmr update /src/index.css
+3:05:51 pm [vite] (client) hmr update /src/index.css
+3:05:51 pm [vite] (client) hmr update /src/index.css
+3:05:51 pm [vite] (client) hmr update /src/index.css
+3:05:51 pm [vite] (client) hmr update /src/index.css
+3:05:51 pm [vite] (client) hmr update /src/index.css
+3:06:13 pm [vite] (client) hmr update /src/App.tsx, /src/index.css
+3:06:13 pm [vite] (client) hmr update /src/index.css
+3:06:13 pm [vite] (client) hmr update /src/index.css
+3:06:13 pm [vite] (client) hmr update /src/index.css
+3:06:13 pm [vite] (client) hmr update /src/index.css
+3:06:17 pm [vite] (client) hmr update /src/App.tsx, /src/index.css
+3:06:17 pm [vite] (client) Pre-transform error: Transform failed with 1 error:
+
+[PARSE_ERROR] Logical expressions and coalesce expressions cannot be mixed
+    ╭─[ src/lib/videoPipelinePrompts.ts:87:18 ]
+    │
+ 87 │     kineticHook: preset.kineticHook ?? project.name.split(/(?=[A-Z])/).join(' ').slice(0, 14).toUpperCase() || 'GROW FASTER',
+    │                  ─────────────────────────────────────────────────────┬─────────────────────────────────────────────────────  
+    │                                                                       ╰─────────────────────────────────────────────────────── 
+    │ 
+    │ Help: Wrap either expression by parentheses
+────╯
+
+  Plugin: vite:oxc
+  File: C:/Users/fichb/Desktop/ForgeFactory/Working/src/lib/videoPipelinePrompts.ts
+3:06:17 pm [vite] (client) hmr update /src/App.tsx, /src/index.css
+3:06:17 pm [vite] (client) hmr update /src/index.css
+3:06:17 pm [vite] (client) hmr update /src/index.css
+3:06:17 pm [vite] (client) hmr update /src/index.css
+3:06:17 pm [vite] (client) hmr update /src/index.css
+3:06:17 pm [vite] (client) hmr update /src/index.css
+3:06:17 pm [vite] (client) hmr update /src/index.css
+3:06:17 pm [vite] (client) hmr update /src/index.css
+3:06:18 pm [vite] (client) hmr update /src/index.css
+3:06:18 pm [vite] (client) hmr update /src/index.css
+3:06:18 pm [vite] (client) hmr update /src/index.css
+3:06:18 pm [vite] (client) hmr update /src/index.css
+3:06:18 pm [vite] (client) hmr update /src/index.css
+3:06:32 pm [vite] (client) hmr update /src/App.tsx, /src/index.css
+3:06:32 pm [vite] (client) hmr update /src/index.css
+3:06:32 pm [vite] (client) hmr update /src/App.tsx, /src/index.css
+3:06:32 pm [vite] (client) Pre-transform error: Transform failed with 1 error:
+
+[PARSE_ERROR] Logical expressions and coalesce expressions cannot be mixed
+    ╭─[ src/lib/videoPipelinePrompts.ts:87:18 ]
+    │
+ 87 │     kineticHook: preset.kineticHook ?? project.name.split(/(?=[A-Z])/).join(' ').slice(0, 14).toUpperCase() || 'GROW FASTER',
+    │                  ─────────────────────────────────────────────────────┬─────────────────────────────────────────────────────  
+    │                                                                       ╰─────────────────────────────────────────────────────── 
+    │ 
+    │ Help: Wrap either expression by parentheses
+────╯
+
+  Plugin: vite:oxc
+  File: C:/Users/fichb/Desktop/ForgeFactory/Working/src/lib/videoPipelinePrompts.ts
+3:06:32 pm [vite] (client) hmr update /src/App.tsx, /src/index.css
+3:06:33 pm [vite] (client) hmr update /src/App.tsx, /src/index.css
+3:06:33 pm [vite] (client) Pre-transform error: Transform failed with 1 error:
+
+[PARSE_ERROR] Logical expressions and coalesce expressions cannot be mixed
+    ╭─[ src/lib/videoPipelinePrompts.ts:87:18 ]
+    │
+ 87 │     kineticHook: preset.kineticHook ?? project.name.split(/(?=[A-Z])/).join(' ').slice(0, 14).toUpperCase() || 'GROW FASTER',
+    │                  ─────────────────────────────────────────────────────┬─────────────────────────────────────────────────────  
+    │                                                                       ╰─────────────────────────────────────────────────────── 
+    │ 
+    │ Help: Wrap either expression by parentheses
+────╯
+
+  Plugin: vite:oxc
+  File: C:/Users/fichb/Desktop/ForgeFactory/Working/src/lib/videoPipelinePrompts.ts
+3:06:33 pm [vite] (client) hmr update /src/App.tsx, /src/index.css
+3:06:33 pm [vite] (client) hmr update /src/index.css
+3:06:33 pm [vite] (client) hmr update /src/App.tsx, /src/index.css
+3:06:33 pm [vite] (client) Pre-transform error: Transform failed with 1 error:
+
+[PARSE_ERROR] Logical expressions and coalesce expressions cannot be mixed
+    ╭─[ src/lib/videoPipelinePrompts.ts:87:18 ]
+    │
+ 87 │     kineticHook: preset.kineticHook ?? project.name.split(/(?=[A-Z])/).join(' ').slice(0, 14).toUpperCase() || 'GROW FASTER',
+    │                  ─────────────────────────────────────────────────────┬─────────────────────────────────────────────────────  
+    │                                                                       ╰─────────────────────────────────────────────────────── 
+    │ 
+    │ Help: Wrap either expression by parentheses
+────╯
+
+  Plugin: vite:oxc
+  File: C:/Users/fichb/Desktop/ForgeFactory/Working/src/lib/videoPipelinePrompts.ts
+3:06:33 pm [vite] (client) hmr update /src/index.css
+3:06:33 pm [vite] (client) Pre-transform error: Transform failed with 1 error:
+
+[PARSE_ERROR] Logical expressions and coalesce expressions cannot be mixed
+    ╭─[ src/lib/videoPipelinePrompts.ts:87:18 ]
+    │
+ 87 │     kineticHook: preset.kineticHook ?? project.name.split(/(?=[A-Z])/).join(' ').slice(0, 14).toUpperCase() || 'GROW FASTER',
+    │                  ─────────────────────────────────────────────────────┬─────────────────────────────────────────────────────  
+    │                                                                       ╰─────────────────────────────────────────────────────── 
+    │ 
+    │ Help: Wrap either expression by parentheses
+────╯
+
+  Plugin: vite:oxc
+  File: C:/Users/fichb/Desktop/ForgeFactory/Working/src/lib/videoPipelinePrompts.ts
+3:06:33 pm [vite] (client) hmr update /src/index.css
+3:06:33 pm [vite] (client) hmr update /src/index.css
+3:06:33 pm [vite] (client) hmr update /src/index.css
+3:06:33 pm [vite] (client) hmr update /src/index.css
+3:06:33 pm [vite] (client) hmr update /src/index.css
+3:06:33 pm [vite] (client) hmr update /src/index.css
+3:06:33 pm [vite] (client) hmr update /src/index.css
+3:06:34 pm [vite] (client) hmr update /src/index.css
+3:06:34 pm [vite] (client) hmr update /src/index.css
+3:06:34 pm [vite] (client) hmr update /src/index.css
+3:06:34 pm [vite] (client) hmr update /src/index.css
+3:06:34 pm [vite] (client) hmr update /src/index.css
+3:06:34 pm [vite] (client) hmr update /src/index.css
+3:06:34 pm [vite] (client) hmr update /src/index.css
+3:06:34 pm [vite] (client) hmr update /src/index.css
+3:06:34 pm [vite] (client) hmr update /src/index.css
+3:06:35 pm [vite] (client) hmr update /src/index.css
+3:06:35 pm [vite] (client) hmr update /src/index.css
+3:06:35 pm [vite] (client) hmr update /src/index.css
+3:06:35 pm [vite] (client) hmr update /src/index.css
+3:06:35 pm [vite] (client) hmr update /src/index.css
+3:06:35 pm [vite] (client) hmr update /src/index.css
+3:06:38 pm [vite] (client) hmr update /src/components/pages/VideoStudio.tsx, /src/index.css
+3:06:38 pm [vite] (client) hmr update /src/components/pages/AgenticPipeline.tsx, /src/index.css
+3:06:38 pm [vite] (client) hmr update /src/index.css
+3:06:38 pm [vite] (client) hmr update /src/components/pages/VideoStudio.tsx, /src/index.css
+3:06:38 pm [vite] (client) hmr update /src/components/pages/AgenticPipeline.tsx, /src/index.css
+3:06:39 pm [vite] (client) hmr update /src/index.css
+3:06:39 pm [vite] (client) hmr update /src/index.css
+3:06:39 pm [vite] (client) hmr update /src/index.css
+3:06:39 pm [vite] (client) hmr update /src/index.css
+3:06:39 pm [vite] (client) hmr update /src/index.css
+3:06:39 pm [vite] (client) hmr update /src/index.css
+3:06:39 pm [vite] (client) hmr update /src/index.css
+3:06:39 pm [vite] (client) hmr update /src/index.css
+3:06:39 pm [vite] (client) hmr update /src/index.css
+3:06:40 pm [vite] (client) hmr update /src/index.css
+3:06:40 pm [vite] (client) hmr update /src/index.css
+3:06:40 pm [vite] (client) hmr update /src/index.css
+3:06:40 pm [vite] (client) hmr update /src/index.css
+3:06:40 pm [vite] (client) hmr update /src/index.css
+3:06:40 pm [vite] (client) hmr update /src/index.css
+3:06:40 pm [vite] (client) hmr update /src/index.css
+3:06:40 pm [vite] (client) hmr update /src/index.css
+3:06:40 pm [vite] (client) hmr update /src/index.css
+3:06:40 pm [vite] (client) hmr update /src/index.css
+3:06:41 pm [vite] (client) hmr update /src/index.css
+3:06:41 pm [vite] (client) hmr update /src/index.css
+3:06:41 pm [vite] (client) hmr update /src/index.css
+3:06:41 pm [vite] (client) hmr update /src/index.css
+3:06:41 pm [vite] (client) hmr update /src/index.css
+3:06:41 pm [vite] (client) hmr update /src/index.css
+3:06:41 pm [vite] (client) hmr update /src/index.css
+3:06:41 pm [vite] (client) hmr update /src/index.css
+3:06:41 pm [vite] (client) hmr update /src/index.css
+3:06:42 pm [vite] (client) hmr update /src/index.css
+3:06:42 pm [vite] (client) hmr update /src/index.css
+3:06:42 pm [vite] (client) hmr update /src/index.css
+3:06:42 pm [vite] (client) hmr update /src/index.css
+3:06:42 pm [vite] (client) hmr update /src/index.css
+3:06:42 pm [vite] (client) hmr update /src/index.css
+3:06:42 pm [vite] (client) hmr update /src/index.css
+3:06:42 pm [vite] (client) hmr update /src/index.css
+3:06:42 pm [vite] (client) hmr update /src/index.css
+3:06:43 pm [vite] (client) hmr update /src/index.css
+3:06:43 pm [vite] (client) hmr update /src/index.css
+3:06:43 pm [vite] (client) hmr update /src/index.css
+3:06:43 pm [vite] (client) hmr update /src/App.tsx, /src/index.css
+3:06:43 pm [vite] (client) Pre-transform error: Transform failed with 1 error:
+
+[PARSE_ERROR] Logical expressions and coalesce expressions cannot be mixed
+    ╭─[ src/lib/videoPipelinePrompts.ts:87:18 ]
+    │
+ 87 │     kineticHook: preset.kineticHook ?? project.name.split(/(?=[A-Z])/).join(' ').slice(0, 14).toUpperCase() || 'GROW FASTER',
+    │                  ─────────────────────────────────────────────────────┬─────────────────────────────────────────────────────  
+    │                                                                       ╰─────────────────────────────────────────────────────── 
+    │ 
+    │ Help: Wrap either expression by parentheses
+────╯
+
+  Plugin: vite:oxc
+  File: C:/Users/fichb/Desktop/ForgeFactory/Working/src/lib/videoPipelinePrompts.ts
+3:06:43 pm [vite] (client) hmr update /src/App.tsx, /src/components/pages/VideoStudio.tsx, /src/components/pages/AgenticPipeline.tsx, /src/index.css
+3:06:43 pm [vite] (client) hmr update /src/index.css
+3:06:43 pm [vite] (client) hmr update /src/App.tsx, /src/index.css
+3:06:43 pm [vite] (client) Pre-transform error: Transform failed with 1 error:
+
+[PARSE_ERROR] Logical expressions and coalesce expressions cannot be mixed
+    ╭─[ src/lib/videoPipelinePrompts.ts:87:18 ]
+    │
+ 87 │     kineticHook: preset.kineticHook ?? project.name.split(/(?=[A-Z])/).join(' ').slice(0, 14).toUpperCase() || 'GROW FASTER',
+    │                  ─────────────────────────────────────────────────────┬─────────────────────────────────────────────────────  
+    │                                                                       ╰─────────────────────────────────────────────────────── 
+    │ 
+    │ Help: Wrap either expression by parentheses
+────╯
+
+  Plugin: vite:oxc
+  File: C:/Users/fichb/Desktop/ForgeFactory/Working/src/lib/videoPipelinePrompts.ts
+3:06:43 pm [vite] (client) hmr update /src/index.css
+3:06:43 pm [vite] (client) hmr update /src/index.css
+3:06:43 pm [vite] (client) hmr update /src/index.css
+3:06:44 pm [vite] (client) hmr update /src/index.css
+3:06:44 pm [vite] (client) hmr update /src/index.css
+3:06:44 pm [vite] (client) hmr update /src/index.css
+3:06:44 pm [vite] (client) hmr update /src/index.css
+3:06:44 pm [vite] (client) hmr update /src/index.css
+3:06:44 pm [vite] (client) hmr update /src/index.css
+3:06:44 pm [vite] (client) hmr update /src/index.css
+3:06:44 pm [vite] (client) hmr update /src/index.css
+3:06:44 pm [vite] (client) hmr update /src/index.css
+3:06:45 pm [vite] (client) hmr update /src/index.css
+3:06:45 pm [vite] (client) hmr update /src/index.css
+3:06:45 pm [vite] (client) hmr update /src/index.css
+3:06:45 pm [vite] (client) hmr update /src/index.css
+3:06:45 pm [vite] (client) hmr update /src/index.css
+3:06:45 pm [vite] (client) hmr update /src/index.css
+3:06:45 pm [vite] (client) hmr update /src/index.css
+3:06:45 pm [vite] (client) hmr update /src/index.css
+3:06:45 pm [vite] (client) hmr update /src/index.css
+3:06:45 pm [vite] (client) hmr update /src/index.css
+3:06:46 pm [vite] (client) hmr update /src/index.css
+3:06:46 pm [vite] (client) hmr update /src/index.css
+3:06:46 pm [vite] (client) hmr update /src/index.css
+3:06:46 pm [vite] (client) hmr update /src/index.css
+3:06:46 pm [vite] (client) hmr update /src/index.css
+3:06:46 pm [vite] (client) hmr update /src/index.css
+3:06:46 pm [vite] (client) hmr update /src/index.css
+3:06:46 pm [vite] (client) hmr update /src/index.css
+3:06:49 pm [vite] (client) hmr update /src/components/pages/ModelLab.tsx, /src/index.css
+3:06:49 pm [vite] (client) hmr update /src/App.tsx, /src/index.css
+3:06:49 pm [vite] (client) hmr update /src/components/pages/ModelLab.tsx, /src/index.css
+3:06:49 pm [vite] (client) hmr update /src/index.css
+3:06:49 pm [vite] (client) Pre-transform error: Transform failed with 1 error:
+
+[PARSE_ERROR] Logical expressions and coalesce expressions cannot be mixed
+    ╭─[ src/lib/videoPipelinePrompts.ts:87:18 ]
+    │
+ 87 │     kineticHook: preset.kineticHook ?? project.name.split(/(?=[A-Z])/).join(' ').slice(0, 14).toUpperCase() || 'GROW FASTER',
+    │                  ─────────────────────────────────────────────────────┬─────────────────────────────────────────────────────  
+    │                                                                       ╰─────────────────────────────────────────────────────── 
+    │ 
+    │ Help: Wrap either expression by parentheses
+────╯
+
+  Plugin: vite:oxc
+  File: C:/Users/fichb/Desktop/ForgeFactory/Working/src/lib/videoPipelinePrompts.ts
+3:07:07 pm [vite] (client) hmr update /src/App.tsx, /src/index.css
+3:07:07 pm [vite] (client) hmr update /src/index.css
+3:07:07 pm [vite] (client) hmr update /src/App.tsx, /src/index.css
+3:07:07 pm [vite] (client) hmr update /src/App.tsx, /src/index.css
+3:07:07 pm [vite] (client) hmr update /src/index.css
+3:07:07 pm [vite] (client) hmr update /src/App.tsx, /src/index.css
+3:07:07 pm [vite] (client) hmr update /src/index.css
+3:07:07 pm [vite] (client) hmr update /src/App.tsx, /src/index.css
+3:07:07 pm [vite] (client) hmr update /src/App.tsx, /src/index.css
+3:07:07 pm [vite] (client) hmr update /src/index.css
+3:07:07 pm [vite] (client) hmr update /src/index.css
+3:07:07 pm [vite] (client) hmr update /src/index.css
+3:07:07 pm [vite] (client) hmr update /src/index.css
+3:07:07 pm [vite] (client) hmr update /src/index.css
+3:07:07 pm [vite] (client) hmr update /src/index.css
+3:07:08 pm [vite] (client) hmr update /src/index.css
+3:07:17 pm [vite] (client) hmr update /src/index.css
+3:07:18 pm [vite] (client) hmr update /src/index.css
+3:07:18 pm [vite] (client) hmr update /src/index.css
+3:07:18 pm [vite] (client) hmr update /src/index.css
+3:15:54 pm [vite] (client) hmr update /src/index.css
+3:15:54 pm [vite] (client) hmr update /src/index.css
+3:15:54 pm [vite] (client) hmr update /src/index.css
+3:15:55 pm [vite] (client) hmr update /src/index.css
+3:15:55 pm [vite] (client) hmr update /src/index.css
+3:15:55 pm [vite] (client) hmr update /src/index.css
+3:33:46 pm [vite] (client) hmr update /src/index.css
+3:33:46 pm [vite] (client) hmr update /src/index.css
+3:33:46 pm [vite] (client) hmr update /src/index.css
+3:38:37 pm [vite] (client) hmr update /src/index.css
+3:38:37 pm [vite] (client) hmr update /src/index.css
+3:38:37 pm [vite] (client) hmr update /src/index.css
+3:38:37 pm [vite] (client) hmr update /src/index.css
+3:38:37 pm [vite] (client) hmr update /src/index.css
+3:38:37 pm [vite] (client) hmr update /src/index.css
+3:38:37 pm [vite] (client) hmr update /src/index.css
+3:38:37 pm [vite] (client) hmr update /src/index.css
+3:38:37 pm [vite] (client) hmr update /src/index.css
+3:38:38 pm [vite] (client) hmr update /src/index.css
+3:38:38 pm [vite] (client) hmr update /src/index.css
+3:38:38 pm [vite] (client) hmr update /src/index.css
+3:38:38 pm [vite] (client) hmr update /src/index.css
+3:38:38 pm [vite] (client) hmr update /src/index.css
+3:38:38 pm [vite] (client) hmr update /src/index.css
+3:38:38 pm [vite] (client) hmr update /src/index.css
+3:38:38 pm [vite] (client) hmr update /src/index.css
+3:38:38 pm [vite] (client) hmr update /src/index.css
+3:38:39 pm [vite] (client) hmr update /src/index.css
+3:38:39 pm [vite] (client) hmr update /src/index.css
+3:38:39 pm [vite] (client) hmr update /src/index.css
+3:38:39 pm [vite] (client) hmr update /src/index.css
+3:38:39 pm [vite] (client) hmr update /src/index.css
+3:38:39 pm [vite] (client) hmr update /src/index.css
+3:38:39 pm [vite] (client) hmr update /src/index.css
+3:38:39 pm [vite] (client) hmr update /src/index.css
+3:38:39 pm [vite] (client) hmr update /src/index.css
+3:38:40 pm [vite] (client) hmr update /src/index.css
+3:38:40 pm [vite] (client) hmr update /src/index.css
+3:38:40 pm [vite] (client) hmr update /src/index.css
+3:38:40 pm [vite] (client) hmr update /src/index.css
+3:38:40 pm [vite] (client) hmr update /src/index.css
+3:38:40 pm [vite] (client) hmr update /src/index.css
+4:03:45 pm [vite] (client) hmr update /src/index.css
+4:03:45 pm [vite] (client) hmr update /src/index.css
+4:03:45 pm [vite] (client) hmr update /src/index.css
+4:03:45 pm [vite] (client) hmr update /src/index.css
+4:03:45 pm [vite] (client) hmr update /src/index.css
+4:03:45 pm [vite] (client) hmr update /src/index.css
+4:03:46 pm [vite] (client) hmr update /src/index.css
+4:03:46 pm [vite] (client) hmr update /src/index.css
+4:03:46 pm [vite] (client) hmr update /src/index.css
+4:03:46 pm [vite] (client) hmr update /src/index.css
+4:03:46 pm [vite] (client) hmr update /src/index.css
+4:03:46 pm [vite] (client) hmr update /src/index.css
+4:03:46 pm [vite] (client) hmr update /src/index.css
+4:03:46 pm [vite] (client) hmr update /src/index.css
+4:03:46 pm [vite] (client) hmr update /src/index.css
+4:03:46 pm [vite] (client) hmr update /src/index.css
+4:03:47 pm [vite] (client) hmr update /src/index.css
+4:03:47 pm [vite] (client) hmr update /src/index.css
+4:03:47 pm [vite] (client) hmr update /src/index.css
+4:03:47 pm [vite] (client) hmr update /src/index.css
+4:03:47 pm [vite] (client) hmr update /src/index.css
+4:03:47 pm [vite] (client) hmr update /src/index.css
+4:03:47 pm [vite] (client) hmr update /src/index.css
+4:03:47 pm [vite] (client) hmr update /src/index.css
+4:03:47 pm [vite] (client) hmr update /src/index.css
+4:03:48 pm [vite] (client) hmr update /src/index.css
+4:33:46 pm [vite] (client) hmr update /src/index.css
+5:03:47 pm [vite] (client) hmr update /src/index.css
+5:03:47 pm [vite] (client) hmr update /src/index.css
+5:03:47 pm [vite] (client) hmr update /src/index.css
+5:03:47 pm [vite] (client) hmr update /src/index.css
+5:03:47 pm [vite] (client) hmr update /src/index.css
+5:03:47 pm [vite] (client) hmr update /src/index.css
+5:03:48 pm [vite] (client) hmr update /src/index.css
+5:03:48 pm [vite] (client) hmr update /src/index.css
+5:03:48 pm [vite] (client) hmr update /src/index.css
+5:03:48 pm [vite] (client) hmr update /src/index.css
+5:03:48 pm [vite] (client) hmr update /src/index.css
+5:03:48 pm [vite] (client) hmr update /src/index.css
+5:03:48 pm [vite] (client) hmr update /src/index.css
+5:03:49 pm [vite] (client) hmr update /src/index.css
+5:03:49 pm [vite] (client) hmr update /src/index.css
+5:03:49 pm [vite] (client) hmr update /src/index.css
+5:03:49 pm [vite] (client) hmr update /src/index.css
+5:03:49 pm [vite] (client) hmr update /src/index.css
+5:03:49 pm [vite] (client) hmr update /src/index.css
+5:03:49 pm [vite] (client) hmr update /src/index.css
+5:03:49 pm [vite] (client) hmr update /src/index.css
+5:03:50 pm [vite] (client) hmr update /src/index.css
+5:16:28 pm [vite] (client) hmr update /src/index.css
+5:16:28 pm [vite] (client) hmr update /src/index.css
+5:16:28 pm [vite] (client) hmr update /src/index.css
+5:16:28 pm [vite] (client) hmr update /src/index.css
+5:16:28 pm [vite] (client) hmr update /src/index.css
+5:16:28 pm [vite] (client) hmr update /src/index.css
+5:16:28 pm [vite] (client) hmr update /src/index.css
+5:16:28 pm [vite] (client) hmr update /src/index.css
+5:16:28 pm [vite] (client) hmr update /src/index.css
+5:16:28 pm [vite] (client) hmr update /src/index.css
+5:16:28 pm [vite] (client) hmr update /src/index.css
+5:16:28 pm [vite] (client) hmr update /src/index.css
+5:16:28 pm [vite] (client) hmr update /src/index.css
+5:16:29 pm [vite] (client) hmr update /src/index.css
+5:16:29 pm [vite] (client) hmr update /src/index.css
+5:16:29 pm [vite] (client) hmr update /src/index.css
+5:16:29 pm [vite] (client) hmr update /src/index.css
+5:16:29 pm [vite] (client) hmr update /src/index.css
+5:16:29 pm [vite] (client) hmr update /src/index.css
+5:16:29 pm [vite] (client) hmr update /src/index.css
+5:16:29 pm [vite] (client) hmr update /src/index.css
+5:16:29 pm [vite] (client) hmr update /src/index.css
+5:16:29 pm [vite] (client) hmr update /src/index.css
+5:16:29 pm [vite] (client) hmr update /src/index.css
+5:16:29 pm [vite] (client) hmr update /src/index.css
+5:16:29 pm [vite] (client) hmr update /src/index.css
+5:16:29 pm [vite] (client) hmr update /src/index.css
+5:16:29 pm [vite] (client) hmr update /src/index.css
+5:16:29 pm [vite] (client) hmr update /src/index.css
+5:16:29 pm [vite] (client) hmr update /src/index.css
+5:16:29 pm [vite] (client) hmr update /src/index.css
+5:16:30 pm [vite] (client) hmr update /src/index.css
+5:16:30 pm [vite] (client) hmr update /src/index.css
+5:16:30 pm [vite] (client) hmr update /src/index.css
+5:16:30 pm [vite] (client) hmr update /src/index.css
+5:16:30 pm [vite] (client) hmr update /src/index.css
+5:16:30 pm [vite] (client) hmr update /src/index.css
+5:16:30 pm [vite] (client) hmr update /src/index.css
+5:16:30 pm [vite] (client) hmr update /src/index.css
+5:16:30 pm [vite] (client) hmr update /src/index.css
+5:16:30 pm [vite] (client) hmr update /src/index.css
+5:16:30 pm [vite] (client) hmr update /src/index.css
+5:16:30 pm [vite] (client) hmr update /src/index.css
+5:16:30 pm [vite] (client) hmr update /src/index.css
+5:16:30 pm [vite] (client) hmr update /src/index.css
+5:16:30 pm [vite] (client) hmr update /src/index.css
+5:16:30 pm [vite] (client) hmr update /src/index.css
+5:16:30 pm [vite] (client) hmr update /src/index.css
+5:16:30 pm [vite] (client) hmr update /src/index.css
+5:16:30 pm [vite] (client) hmr update /src/index.css
+5:16:30 pm [vite] (client) hmr update /src/index.css
+5:16:30 pm [vite] (client) hmr update /src/index.css
+5:16:30 pm [vite] (client) hmr update /src/index.css
+5:16:30 pm [vite] (client) hmr update /src/index.css
+5:16:30 pm [vite] (client) hmr update /src/index.css
+5:16:30 pm [vite] (client) hmr update /src/index.css
+5:16:30 pm [vite] (client) hmr update /src/index.css
+5:16:30 pm [vite] (client) hmr update /src/index.css
+5:16:30 pm [vite] (client) hmr update /src/index.css
+5:16:30 pm [vite] (client) hmr update /src/index.css
+5:16:30 pm [vite] (client) hmr update /src/index.css
+5:16:30 pm [vite] (client) hmr update /src/index.css
+5:16:30 pm [vite] (client) hmr update /src/index.css
+5:16:30 pm [vite] (client) hmr update /src/index.css
+5:16:30 pm [vite] (client) hmr update /src/index.css
+5:16:30 pm [vite] (client) hmr update /src/index.css
+5:16:30 pm [vite] (client) hmr update /src/index.css
+5:16:30 pm [vite] (client) hmr update /src/index.css
+5:16:30 pm [vite] (client) hmr update /src/index.css
+5:16:30 pm [vite] (client) hmr update /src/index.css
+5:16:30 pm [vite] (client) hmr update /src/index.css
+5:16:30 pm [vite] (client) hmr update /src/index.css
+5:16:30 pm [vite] (client) hmr update /src/index.css
+5:16:30 pm [vite] (client) hmr update /src/index.css
+5:16:30 pm [vite] (client) hmr update /src/index.css
+5:16:30 pm [vite] (client) hmr update /src/index.css
+5:16:30 pm [vite] (client) hmr update /src/index.css
+5:16:30 pm [vite] (client) hmr update /src/index.css
+5:16:30 pm [vite] (client) hmr update /src/index.css
+5:16:30 pm [vite] (client) hmr update /src/index.css
+5:16:30 pm [vite] (client) hmr update /src/index.css
+5:16:30 pm [vite] (client) hmr update /src/index.css
+5:16:30 pm [vite] (client) hmr update /src/index.css
+5:16:30 pm [vite] (client) hmr update /src/index.css
+5:16:30 pm [vite] (client) hmr update /src/index.css
+5:16:30 pm [vite] (client) hmr update /src/index.css
+5:16:30 pm [vite] (client) hmr update /src/index.css
+5:16:30 pm [vite] (client) hmr update /src/index.css
+5:16:30 pm [vite] (client) hmr update /src/index.css
+5:16:30 pm [vite] (client) hmr update /src/index.css
+5:16:30 pm [vite] (client) hmr update /src/index.css
+5:16:30 pm [vite] (client) hmr update /src/index.css
+5:16:30 pm [vite] (client) hmr update /src/index.css
+5:16:30 pm [vite] (client) hmr update /src/index.css
+5:16:30 pm [vite] (client) hmr update /src/index.css
+5:16:30 pm [vite] (client) hmr update /src/index.css
+5:16:30 pm [vite] (client) hmr update /src/index.css
+5:16:30 pm [vite] (client) hmr update /src/index.css
+5:16:30 pm [vite] (client) hmr update /src/index.css
+5:16:30 pm [vite] (client) hmr update /src/index.css
+5:16:30 pm [vite] (client) hmr update /src/index.css
+5:16:30 pm [vite] (client) hmr update /src/index.css
+5:16:30 pm [vite] (client) hmr update /src/index.css
+5:16:30 pm [vite] (client) hmr update /src/index.css
+5:16:30 pm [vite] (client) hmr update /src/index.css
+5:16:30 pm [vite] (client) hmr update /src/index.css
+5:16:30 pm [vite] (client) hmr update /src/index.css
+5:16:30 pm [vite] (client) hmr update /src/index.css
+5:16:30 pm [vite] (client) hmr update /src/index.css
+5:16:30 pm [vite] (client) hmr update /src/index.css
+5:16:30 pm [vite] (client) hmr update /src/index.css
+5:16:30 pm [vite] (client) hmr update /src/index.css
+5:16:30 pm [vite] (client) hmr update /src/index.css
+5:16:30 pm [vite] (client) hmr update /src/index.css
+5:16:30 pm [vite] (client) hmr update /src/index.css
+5:16:30 pm [vite] (client) hmr update /src/index.css
+5:16:30 pm [vite] (client) hmr update /src/index.css
+5:16:30 pm [vite] (client) hmr update /src/index.css
+5:16:30 pm [vite] (client) hmr update /src/index.css
+5:16:30 pm [vite] (client) hmr update /src/index.css
+5:16:30 pm [vite] (client) hmr update /src/index.css
+5:16:30 pm [vite] (client) hmr update /src/index.css
+5:16:30 pm [vite] (client) hmr update /src/index.css
+5:16:30 pm [vite] (client) hmr update /src/index.css
+5:16:30 pm [vite] (client) hmr update /src/index.css
+5:16:30 pm [vite] (client) hmr update /src/index.css
+5:16:30 pm [vite] (client) hmr update /src/index.css
+5:16:30 pm [vite] (client) hmr update /src/index.css
+5:16:30 pm [vite] (client) hmr update /src/index.css
+5:16:31 pm [vite] (client) hmr update /src/index.css
+5:16:31 pm [vite] (client) hmr update /src/index.css
+5:16:31 pm [vite] (client) hmr update /src/index.css
+5:16:31 pm [vite] (client) hmr update /src/index.css
+5:16:31 pm [vite] (client) hmr update /src/index.css
+5:16:31 pm [vite] (client) hmr update /src/index.css
+5:16:31 pm [vite] (client) hmr update /src/index.css
+5:16:31 pm [vite] (client) hmr update /src/index.css
+5:16:31 pm [vite] (client) hmr update /src/index.css
+5:16:31 pm [vite] (client) hmr update /src/index.css
+5:16:32 pm [vite] (client) hmr update /src/index.css
+5:16:32 pm [vite] (client) hmr update /src/index.css
+5:16:32 pm [vite] (client) hmr update /src/index.css

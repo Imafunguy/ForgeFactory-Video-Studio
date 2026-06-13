@@ -1,0 +1,7 @@
+{
+  "name": "get_file_contents",
+  "description": "Get the contents of a file or directory from a GitLab project",
+  "inputSchema": {
+    "$schema": "http://json-schema.org/draft-07/schema#"
+  }
+}

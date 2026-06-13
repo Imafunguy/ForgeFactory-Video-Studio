@@ -1,0 +1,15 @@
+{
+  "name": "start",
+  "description": "Create or reuse a Browserbase session",
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "sessionId": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "additionalProperties": false,
+    "$schema": "http://json-schema.org/draft-07/schema#"
+  }
+}

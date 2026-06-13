@@ -1,0 +1,23 @@
+---
+pid: 18088
+cwd: "C:\Users\fichb\Desktop\ForgeFactory\Working"
+command: "Set-Location \"C:\\Users\\fichb\\Desktop\\ForgeFactory\\Working\"; npm run dev"
+started_at: 2026-06-13T02:32:35.567Z
+running_for_ms: 6675003  
+---
+
+> working@0.0.0 dev
+> vite
+
+Port 5173 is in use, trying another one...
+Port 5174 is in use, trying another one...
+Port 5175 is in use, trying another one...
+
+  VITE v8.0.16  ready in 206 ms
+
+  ➜  Local:   http://localhost:5176/
+  ➜  Network: use --host to expose
+12:40:51 pm [vite] (client) page reload .superpowers/brainstorm/ff-hyperframes-1781318421-6995/content/01-hyperframes-components-templates.html
+12:47:12 pm [vite] (client) page reload .superpowers/brainstorm/ff-hyperframes-1781318421-6995/content/02-selected-core-primitives-and-templates.html
+12:51:27 pm [vite] vite.config.ts changed, restarting server...
+12:51:27 pm [vite] server restarted.

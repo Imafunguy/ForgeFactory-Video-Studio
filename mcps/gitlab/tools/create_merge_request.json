@@ -1,0 +1,7 @@
+{
+  "name": "create_merge_request",
+  "description": "Create a new merge request in a GitLab project",
+  "inputSchema": {
+    "$schema": "http://json-schema.org/draft-07/schema#"
+  }
+}
