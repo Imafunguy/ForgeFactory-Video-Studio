@@ -5,8 +5,9 @@ import {
   loadCurrentProjectId, saveCurrentProjectId, loadApiKey, saveApiKey,
   resolveOpenRouterApiKey,
   loadModelPreferences, saveModelPreferences,
+  loadCustomBrandKits, saveCustomBrandKit,
 } from './lib/storage';
-import type { Project, Generation } from './lib/storage';
+import type { Project, Generation, SavedBrandKit } from './lib/storage';
 import {
   callOpenRouter,
   generateImagePrompts,
@@ -54,12 +55,17 @@ import {
 import { buildComfyPayload } from './lib/comfyAdvancedBridge';
 import {
   type VideoControls,
+  type BrandPalette,
   DEFAULT_VIDEO_CONTROLS,
   loadPremiumPreset,
   mergeControls,
   mapToRenderer,
   injectControlsToPrompt,
+  getControlsFromProject,
+  resolveBrandPalette,
+  brandPaletteFromArray,
 } from './lib/videoControls';
+import { deriveBrandPaletteFromColor } from './lib/storage';
 import {
   DEFAULT_IMAGE_MODEL,
   DEFAULT_REASONING_MODEL,
@@ -158,23 +164,98 @@ function App() {
   const [qualityPreset, setQualityPreset] = useState<QualityPreset>(initialPrefs.qualityPreset ?? 'balanced');
   const [selectedTemplate, setSelectedTemplate] = useState<TemplateId | null>(initialPrefs.selectedTemplate ?? null);
   const [targetRes] = useState({ width: 1920, height: 1080, fps: 60 });
-  const [videoControls, setVideoControls] = useState<VideoControls>(DEFAULT_VIDEO_CONTROLS);
+  const [videoControls, setVideoControls] = useState<VideoControls>(() => {
+    const loaded = loadProjects();
+    const id = loadCurrentProjectId() || loaded[0]?.id;
+    const project = loaded.find((p) => p.id === id) || loaded[0];
+    return project ? mergeControls(getControlsFromProject(project)) : DEFAULT_VIDEO_CONTROLS;
+  });
   const [activePresetId, setActivePresetId] = useState<string | null>(null);
   const [workflowStages, setWorkflowStages] = useState<WorkflowStageResult[]>([]);
+  const [customBrandKits, setCustomBrandKits] = useState<SavedBrandKit[]>(() => loadCustomBrandKits());
   const comfyNote = buildComfyPayload(videoControls, '', studioGoal || agenticGoal).exportNote;
 
   const currentProject = projects.find(p => p.id === currentProjectId) || projects[0];
 
+  const applyProjectBrandToControls = useCallback((project: Project) => {
+    setVideoControls((prev) => {
+      const brandPatch = getControlsFromProject(project);
+      if (prev.accentLock === false) {
+        return mergeControls({ ...prev, fontFamily: brandPatch.fontFamily });
+      }
+      return mergeControls({ ...prev, ...brandPatch });
+    });
+  }, []);
+
   const switchProject = (id: string) => {
     setCurrentProjectId(id);
     saveCurrentProjectId(id);
-    toast.success(`Switched to ${projects.find(p => p.id === id)?.name}`);
+    const proj = projects.find((p) => p.id === id);
+    if (proj) applyProjectBrandToControls(proj);
+    toast.success(`Switched to ${proj?.name}`);
   };
 
   const updateProjects = (newProjects: Project[]) => {
     setProjects(newProjects);
     saveProjects(newProjects);
   };
+
+  const handleSaveProjectBrandDefault = useCallback((palette: BrandPalette, fontFamily: string) => {
+    if (!currentProject) return;
+    const paletteArray = [
+      palette.primary,
+      palette.accent,
+      palette.secondary,
+      palette.neutral,
+      palette.surface,
+      palette.text,
+    ].filter((c): c is string => !!c);
+    const updated = projects.map((p) =>
+      p.id === currentProject.id
+        ? {
+            ...p,
+            colors: palette.primary,
+            brandPalette: paletteArray,
+            defaultFont: fontFamily,
+          }
+        : p,
+    );
+    updateProjects(updated);
+    toast.success(`Saved brand kit as default for ${currentProject.name}`);
+  }, [currentProject, projects]);
+
+  const handleSaveCustomBrandKit = useCallback((name: string, palette: BrandPalette, fontFamily: string) => {
+    const paletteArray = [
+      palette.primary,
+      palette.accent,
+      palette.secondary,
+      palette.neutral,
+      palette.surface,
+      palette.text,
+    ].filter((c): c is string => !!c);
+    const kit: SavedBrandKit = {
+      id: 'kit_' + getTimestamp(),
+      name,
+      palette: paletteArray,
+      defaultFont: fontFamily,
+      createdAt: getTimestamp(),
+    };
+    const next = saveCustomBrandKit(kit);
+    setCustomBrandKits(next);
+    toast.success(`Custom kit "${name}" saved`);
+  }, []);
+
+  const handleLoadCustomBrandKit = useCallback((kit: SavedBrandKit) => {
+    setVideoControls((prev) =>
+      mergeControls({
+        ...prev,
+        brandPalette: brandPaletteFromArray(kit.palette),
+        fontFamily: kit.defaultFont,
+        accentLock: true,
+      }),
+    );
+    toast.success(`Loaded kit "${kit.name}"`);
+  }, []);
 
   const appendGeneration = (gen: Generation) => {
     setGenerations(prev => {
@@ -255,7 +336,10 @@ function App() {
       setStudioGoal(bundle.goal);
       setAgenticGoal(bundle.goal);
       setActivePresetId(presetId);
-      toast.success(`Loaded ${bundle.label} — ${bundle.controls.lengthSec}s ${bundle.controls.aspectRatio}`);
+      const styleLabel = bundle.controls.videoStyle?.replace(/-/g, ' ') ?? 'custom';
+      toast.success(
+        `Loaded ${bundle.label} — ${bundle.controls.lengthSec}s ${bundle.controls.aspectRatio} (${styleLabel})`,
+      );
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Failed to load preset');
     }
@@ -354,10 +438,14 @@ function App() {
     container.style.overflow = 'hidden';
 
     const profile = currentProject ? getBrandVideoProfile(currentProject) : null;
+    const resolvedPalette = resolveBrandPalette(
+      videoControls,
+      currentProject?.brandPalette ?? currentProject?.colors,
+    );
     const brand = currentProject
       ? {
           name: currentProject.name,
-          colors: currentProject.colors,
+          colors: resolvedPalette.accent || currentProject.colors,
           tone: currentProject.tone,
           uiElements: currentProject.uiElements,
           kineticHook: profile?.kineticHook,
@@ -366,8 +454,10 @@ function App() {
           quote: profile?.quote,
           cta: profile?.cta,
           tagline: profile?.tagline,
+          brandPalette: resolvedPalette,
+          fontFamily: videoControls.fontFamily,
         }
-      : { name: 'SaaS', colors: '#6366f1' };
+      : { name: 'SaaS', colors: resolvedPalette.accent, brandPalette: resolvedPalette };
 
     const effectiveTemplate = templateId ?? selectedTemplate;
     const rendererParams = mapToRenderer(videoControls, targetRes.fps);
@@ -464,9 +554,25 @@ function App() {
       let finalBlob = rawBlob;
       let note = options?.renderNote ?? `Local Hyperframes (${preset})`;
 
+      const resolvedPalette = resolveBrandPalette(
+        videoControls,
+        currentProject?.brandPalette ?? currentProject?.colors,
+      );
       const brand = currentProject
-        ? { name: currentProject.name, accent: currentProject.colors, tagline: getBrandVideoProfile(currentProject).tagline }
-        : { name: 'ForgeFactory', accent: '#6366f1', tagline: 'Marketing preview' };
+        ? {
+            name: currentProject.name,
+            accent: resolvedPalette.accent || currentProject.colors,
+            tagline: getBrandVideoProfile(currentProject).tagline,
+            brandPalette: resolvedPalette,
+            fontFamily: videoControls.fontFamily,
+          }
+        : {
+            name: 'ForgeFactory',
+            accent: resolvedPalette.accent,
+            tagline: 'Marketing preview',
+            brandPalette: resolvedPalette,
+            fontFamily: videoControls.fontFamily,
+          };
 
       const postResult = await postProcessWithFFmpeg(rawBlob, {
         preset,
@@ -1200,16 +1306,20 @@ function App() {
 
   const addProject = () => {
     if (!newProject.name) return;
+    const primaryColor = newProject.colors || '#6366f1';
     const proj: Project = {
       id: 'p_' + getTimestamp(),
       name: newProject.name,
-      colors: newProject.colors || '#6366f1',
+      colors: primaryColor,
+      brandPalette: deriveBrandPaletteFromColor(primaryColor),
+      defaultFont: 'Inter',
       uiElements: newProject.uiElements || 'dashboard, cards',
       tone: newProject.tone || 'premium',
     };
     updateProjects([...projects, proj]);
     setCurrentProjectId(proj.id);
     saveCurrentProjectId(proj.id);
+    applyProjectBrandToControls(proj);
     setNewProject({ name: '', colors: '', uiElements: '', tone: '' });
     toast.success('Project added');
   };
@@ -1233,7 +1343,11 @@ function App() {
 
   const studioEta = estimateRemainingSeconds(STUDIO_PIPELINE_STEPS, studioStepStatuses, studioCurrentStep);
   const assetsReady = studioStepStatuses.assembly === 'complete' || (studioOutput && studioStepStatuses.keyframes === 'complete');
-  const projectAccent = currentProject?.colors?.match(/#[0-9A-Fa-f]{6}/)?.[0] ?? '#6366f1';
+  const projectAccent =
+    currentProject?.brandPalette?.[0]
+    ?? currentProject?.colors?.match(/#[0-9A-Fa-f]{6}/)?.[0]
+    ?? '#6366f1';
+  const projectPalette = currentProject?.brandPalette;
 
   const renderTabContent = () => {
     switch (currentTab) {
@@ -1276,7 +1390,13 @@ function App() {
             assetsReady={!!assetsReady}
             videoUrl={studioVideoUrl}
             projectName={currentProject?.name}
+            projectId={currentProject?.id}
             projectAccent={projectAccent}
+            projectPalette={projectPalette}
+            customBrandKits={customBrandKits}
+            onSaveProjectBrandDefault={handleSaveProjectBrandDefault}
+            onSaveCustomBrandKit={handleSaveCustomBrandKit}
+            onLoadCustomBrandKit={handleLoadCustomBrandKit}
             onGenerateFull={() => runStudioPipeline('oneclick')}
             onGenerateGuided={() => runStudioPipeline('guided')}
             onRenderVideo={runStudioRenderOnly}

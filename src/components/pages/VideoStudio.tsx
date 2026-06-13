@@ -23,10 +23,12 @@ import { Button, Card, Textarea, Label, Badge } from '../ui';
 import { cn } from '../../lib/utils';
 import { LOCAL_VIDEO_TEMPLATES } from '../../lib/localVideoTemplates';
 import type { QualityPreset, TemplateId } from '../../lib/videoRenderer';
-import type { VideoControls } from '../../lib/videoControls';
+import type { VideoControls, BrandPalette } from '../../lib/videoControls';
+import type { SavedBrandKit } from '../../lib/storage';
 import { listPremiumPresets } from '../../lib/videoControls';
 import { MotionBrushPanel } from '../ui/MotionBrushPanel';
 import { NodeGraphEditor } from '../ui/NodeGraphEditor';
+import { BrandKitPanel } from '../ui/BrandKitPanel';
 
 type StudioMode = 'guided' | 'oneclick';
 
@@ -58,7 +60,13 @@ interface VideoStudioProps {
   assetsReady: boolean;
   videoUrl: string | null;
   projectName?: string;
+  projectId?: string;
   projectAccent: string;
+  projectPalette?: string[];
+  customBrandKits?: SavedBrandKit[];
+  onSaveProjectBrandDefault?: (palette: BrandPalette, fontFamily: string) => void;
+  onSaveCustomBrandKit?: (name: string, palette: BrandPalette, fontFamily: string) => void;
+  onLoadCustomBrandKit?: (kit: SavedBrandKit) => void;
   onGenerateFull: () => void;
   onGenerateGuided: () => void;
   onRenderVideo: () => void;
@@ -111,7 +119,13 @@ export function VideoStudio({
   assetsReady,
   videoUrl,
   projectName,
+  projectId,
   projectAccent,
+  projectPalette,
+  customBrandKits,
+  onSaveProjectBrandDefault,
+  onSaveCustomBrandKit,
+  onLoadCustomBrandKit,
   onGenerateFull,
   onGenerateGuided,
   onRenderVideo,
@@ -279,6 +293,21 @@ export function VideoStudio({
                     Active: {premiumPresets.find((p) => p.id === activePresetId)?.feel}
                   </p>
                 )}
+              </div>
+
+              <div className="mt-3 pt-3 border-t border-emerald-500/15">
+                <BrandKitPanel
+                  controls={videoControls}
+                  onChange={onControlsChange}
+                  projectAccent={projectAccent}
+                  projectPalette={projectPalette}
+                  projectId={projectId}
+                  projectName={projectName}
+                  customKits={customBrandKits}
+                  onSaveProjectDefault={onSaveProjectBrandDefault}
+                  onSaveCustomKit={onSaveCustomBrandKit}
+                  onLoadCustomKit={onLoadCustomBrandKit}
+                />
               </div>
 
               <div className="mt-3 pt-3 border-t border-emerald-500/15">

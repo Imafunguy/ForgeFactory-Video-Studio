@@ -61,7 +61,7 @@ export const TABS: TabDef[] = [
 export const PROJECT_DESCRIPTIONS: Record<string, string> = {
   StrataBody: 'AI-powered body composition coaching with live tracking, progress rings, and personalized wellness insights.',
   SpeedMend: 'Fast repair workflow management with kanban boards, team handoffs, and real-time repair timelines.',
-  ClubCensus: 'Community engagement platform with live polls, member feeds, and real-time census analytics.',
+  ClubCensus: 'Trusted club-management platform for members, events, tasks, payments, reports, and messaging — empowering clubs to thrive.',
 };
 
 export const AGENTIC_STEPS = [

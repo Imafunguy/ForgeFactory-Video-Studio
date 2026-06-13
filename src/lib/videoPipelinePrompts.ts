@@ -10,9 +10,12 @@ import { getTemplateLabel } from './localVideoTemplates';
 import { PROJECT_DESCRIPTIONS } from './constants';
 import {
   type VideoControls,
+  type VideoStyle,
+  type BrandPalette,
   DEFAULT_VIDEO_CONTROLS,
   getCanvasDimensions,
   injectControlsToPrompt,
+  resolveBrandPalette,
 } from './videoControls';
 
 export const QUALITY_BOOST_PLANNING_MODEL = 'x-ai/grok-4';
@@ -79,21 +82,101 @@ const BRAND_PROFILES: Record<string, Partial<BrandVideoProfile>> = {
     uiFocus: 'kanban board, repair timeline, quick-action buttons, team handoff panel',
   },
   ClubCensus: {
-    hookLine: 'Your community already has opinions — now you can hear them instantly.',
-    kineticHook: 'ENGAGE LIVE',
-    painPoint: 'Clubs and communities guess what members want instead of asking in the moment.',
-    featureLabels: ['Live Polls', 'Member Feed', 'Census Analytics'],
-    metricLabels: ['Participation', 'Response Rate'],
-    quote: { text: 'Our event turnout doubled once we started live polls in the feed.', author: 'Priya L., Community Lead' },
-    cta: 'Launch Your Census',
-    tagline: 'Polls, feeds, and insights — all in one pulse.',
-    visualStyle: 'Vibrant magenta-purple community UI, avatar stacks, live poll bars filling, energetic social lighting.',
-    motionHints: 'Poll bars race to percentages, avatars pop in, feed cards slide up, live badge pulses.',
-    uiFocus: 'live poll widget, community feed, member avatars, real-time census dashboard',
+    hookLine: 'Running a club shouldn\'t feel like juggling spreadsheets — organise everything in one place.',
+    kineticHook: 'CLUBS THRIVE',
+    painPoint: 'Club committees lose time on scattered tools, missed events, and unclear member records.',
+    featureLabels: ['Members', 'Events', 'Tasks'],
+    metricLabels: ['Active Members', 'Events Managed'],
+    quote: { text: 'We finally have one trusted place for members, events, and payments.', author: 'James R., Club Secretary' },
+    cta: 'Start Organising Free',
+    tagline: 'Empowering clubs to thrive.',
+    visualStyle: 'Deep green (#2F3D34) and olive (#5C6B5F) club-management UI with gold (#C9A86A) accent highlights, warm white (#F7F6F2) text on charcoal (#161816) surfaces, light stone (#E7E4DC) cards, Inter typography, clean professional dashboard aesthetic — dark green primary buttons, outlined secondary actions, green dot cluster logo with gold accent.',
+    motionHints: 'Member metrics tick up steadily, event calendar highlights pulse gold, task checkmarks animate, card lifts with subtle parallax — trustworthy organised pacing, never flashy or neon.',
+    uiFocus: 'member dashboard with Members/Events/Tasks/Payments/Reports/Messages icons, event calendar, task boards, payment tracking, reports hub',
   },
 };
 
-export type BrandProject = Pick<Project, 'name' | 'colors' | 'uiElements' | 'tone'>;
+export type BrandProject = Pick<
+  Project,
+  | 'name'
+  | 'colors'
+  | 'uiElements'
+  | 'tone'
+  | 'brandPalette'
+  | 'defaultFont'
+  | 'logoDescription'
+  | 'brandVoice'
+  | 'personality'
+  | 'values'
+>;
+
+function formatPaletteBlock(palette: BrandPalette): string {
+  const lines = [
+    `PRIMARY: ${palette.primary}`,
+    `ACCENT: ${palette.accent}`,
+    palette.secondary ? `SECONDARY: ${palette.secondary}` : '',
+    palette.neutral ? `NEUTRAL/SURFACE BG: ${palette.neutral}` : '',
+    palette.surface ? `SURFACE/CARDS: ${palette.surface}` : '',
+    palette.text ? `TEXT/CONTRAST: ${palette.text}` : '',
+  ].filter(Boolean);
+  return lines.join('\n');
+}
+
+/** Full brand kit block: palette, font, logo rules, accent lock — injected into all pipeline prompts. */
+export function buildBrandKitBlock(project: BrandProject, controls: VideoControls): string {
+  const palette = resolveBrandPalette(controls, project.brandPalette ?? project.colors);
+  const font = controls.fontFamily ?? project.defaultFont ?? 'Inter';
+  const placement = controls.logoPlacement ?? 'bottom-right';
+  const logoLock = controls.logoLock ? 'ENABLED — logo must appear exactly as specified, no drift or resize' : 'optional';
+  const accentLock = controls.accentLock !== false
+    ? 'LOCKED — use project palette accent/primary exactly; no hue shifts'
+    : 'unlocked — accent may shift for creative variants';
+
+  const voiceLines = [
+    project.logoDescription ? `LOGO: ${project.logoDescription}` : '',
+    project.brandVoice ? `BRAND VOICE: ${project.brandVoice}` : '',
+    project.personality ? `PERSONALITY: ${project.personality}` : '',
+    project.values ? `VALUES: ${project.values}` : '',
+  ].filter(Boolean);
+
+  return `## BRAND KIT (exact colours + typography + logo rules)
+PALETTE (use each colour for DISTINCT UI roles — never flatten to one hue):
+${formatPaletteBlock(palette)}
+- Primary (#${palette.primary.replace('#', '')}) → dark green main buttons, primary CTAs, key UI chrome
+- Accent (#${palette.accent.replace('#', '')}) → gold highlights, active nav, kinetic underlines, metric deltas
+- Secondary → olive secondary charts, badges, subtle accents
+- Neutral/Surface → charcoal dashboard backgrounds, light stone card bodies, sidebars
+- Text → warm white headlines and body copy on dark surfaces
+
+FONT FAMILY: ${font} — titles, kinetic text, CTA labels, UI chrome labels
+${voiceLines.length ? voiceLines.join('\n') + '\n' : ''}LOGO PLACEMENT: ${placement} | Logo lock: ${logoLock}
+ACCENT LOCK: ${accentLock}
+VIDEO STYLE: ${controls.videoStyle} — follow structure weighting below`;
+}
+
+export function buildVideoStyleStructureBlock(style: VideoStyle, durationSec: number): string {
+  const d = durationSec;
+  const hookEnd = Math.min(6, Math.floor(d * 0.15));
+  const ctaStart = Math.floor(d * 0.75);
+
+  switch (style) {
+    case 'promo-hook':
+      return `STRUCTURE (Promo Hook, ${d}s): Hook density MAX in 0–${hookEnd}s (kinetic + pain flash). Mid: ONE proof beat (poll/metric flash). Final ${d - ctaStart}s: CTA weight HIGH — bold button, logo, tagline. Fast cuts, minimal VO pauses. Vertical-friendly if 9:16.`;
+    case 'explainer':
+      return `STRUCTURE (Explainer, ${d}s): Hook 0–${hookEnd}s → dashboard/feature reveal → metrics/proof → testimonial optional → branded CTA close. Balanced shot density, clear UI readability each beat.`;
+    case 'testimonial':
+      return `STRUCTURE (Testimonial, ${d}s): Short hook → early quote block (by ${Math.floor(d * 0.25)}s) → results/metrics proof → workflow UI → warm brand close. Quote-led narration; proof before hard sell.`;
+    case 'how-it-works':
+      return `STRUCTURE (How it Works, ${d}s): Numbered step reveals (Step 1/2/3) with timeline/handoff emphasis. Progress bars and kanban-style motion between steps. CTA after all steps demonstrated.`;
+    case 'vertical-social':
+      return `STRUCTURE (Vertical Social, ${d}s): 0–${hookEnd}s text-on-screen hook dominant. Fast-paced UI pulses, poll bars, minimal end card. 9:16 safe zones for captions. High energy, ${d <= 15 ? 'no slow builds' : 'tight pacing'}.`;
+    case 'product-deep-dive':
+      return `STRUCTURE (Product Deep Dive, ${d}s): Slow-build or cinematic open → multiple feature beats (3+) → detailed UI interactions → metrics stack → premium end card. Rich camera moves between feature cards.`;
+    case 'custom':
+    default:
+      return `STRUCTURE (Custom, ${d}s): User-defined; still enforce distinct palette roles and brand kit lock rules.`;
+  }
+}
 
 export function getBrandVideoProfile(project: BrandProject): BrandVideoProfile {
   const preset = BRAND_PROFILES[project.name] ?? {};
@@ -138,9 +221,10 @@ export function buildPremiumPatternsBlock(project: BrandProject, controls: Video
       ).join('; ')
     : 'none (global camera motion only)';
 
+  const palette = resolveBrandPalette(controls, project.brandPalette ?? project.colors);
   const ingredients = controls.brandKitLock.enabled
     ? `Ingredients/Elements lock: ${controls.brandKitLock.kitName ?? 'brand kit'} @ ${controls.brandKitLock.lockStrength}% — preserve character sheets, props, UI chrome across shots.`
-    : `Reference adherence: ${controls.refConsistencyStrength}% — lock ${project.name} UI, accent ${project.colors}, typography.`;
+    : `Reference adherence: ${controls.refConsistencyStrength}% — lock ${project.name} UI, palette PRIMARY ${palette.primary} / ACCENT ${palette.accent}, font ${controls.fontFamily ?? project.defaultFont ?? 'Inter'}.`;
 
   const audioBlock = controls.musicSyncLevel !== 'none'
     ? `Audio cues (${controls.musicSyncLevel} sync)${controls.musicSync?.bpm ? ` @ ${controls.musicSync.bpm} BPM` : ''}: ambient + SFX + ${controls.lipSyncStrength && controls.lipSyncStrength > 0 ? `dialogue lip-sync @ ${controls.lipSyncStrength}%` : 'optional VO'}. Beat-match transitions at cue times.`
@@ -158,7 +242,14 @@ export function buildPremiumPatternsBlock(project: BrandProject, controls: Video
     ? `AI Co-Director brief: "${controls.directorModePlainLang}"`
     : '';
 
+  const brandKit = buildBrandKitBlock(project, controls);
+  const styleStructure = buildVideoStyleStructureBlock(controls.videoStyle, controls.lengthSec);
+
   return `
+${brandKit}
+
+${styleStructure}
+
 ## PREMIUM CONTROL SPEC (MCSLA + Constraint Sandwich)
 
 MCSLA:
@@ -171,7 +262,7 @@ MCSLA:
 CONSTRAINT SANDWICH (every shot):
 1. Subject Anchor — ${project.name} UI/brand at ${controls.refConsistencyStrength}% fidelity. ${ingredients}
 2. Shot + Action — ${controls.cameraStyle} camera, motion brush areas: ${brushDesc}. Physics: ${controls.physicsIntensity} weight/momentum.
-3. Constraints — ${firstLast} Brand ${controls.brandIntensity}, text ${controls.textAnimationStyle}, end card ${controls.endCardCTAStyle}. Negatives: no brand drift, no extra limbs, no morphing UI text, maintain momentum continuity.
+3. Constraints — ${firstLast} Brand ${controls.brandIntensity}, logo ${controls.logoPlacement ?? 'bottom-right'}${controls.logoLock ? ' LOCKED' : ''}, text ${controls.textAnimationStyle}, end card ${controls.endCardCTAStyle}. Negatives: no brand drift, no single-colour flattening (use full palette), no extra limbs, no morphing UI text, maintain momentum continuity.
 
 FORMAT: ${controls.lengthSec}s @ ${controls.aspectRatio} (${dims.width}x${dims.height})
 ${controls.heroFrameFirst ? 'HERO FRAME FIRST: lock lighting/mood/lens on still before animating.' : ''}
@@ -183,19 +274,27 @@ ${controls.nodeGraph.enabled ? `Node graph pipeline: ${controls.nodeGraph.templa
 
 export function buildBrandContext(project: BrandProject, controls?: VideoControls): string {
   const profile = getBrandVideoProfile(project);
+  const c = controls ?? DEFAULT_VIDEO_CONTROLS;
+  const palette = resolveBrandPalette(c, project.brandPalette ?? project.colors);
   const base = [
     `BRAND: ${project.name}`,
-    `ACCENT COLOR: ${project.colors}`,
+    `PALETTE: PRIMARY ${palette.primary}, ACCENT ${palette.accent}${palette.secondary ? `, SECONDARY ${palette.secondary}` : ''}${palette.neutral ? `, NEUTRAL ${palette.neutral}` : ''}${palette.surface ? `, SURFACE ${palette.surface}` : ''}${palette.text ? `, TEXT ${palette.text}` : ''}`,
+    `LEGACY ACCENT: ${project.colors}`,
+    `FONT: ${c.fontFamily ?? project.defaultFont ?? 'Inter'}`,
     `TONE: ${project.tone}`,
+    project.brandVoice ? `BRAND VOICE: ${project.brandVoice}` : '',
+    project.personality ? `PERSONALITY: ${project.personality}` : '',
+    project.values ? `VALUES: ${project.values}` : '',
+    project.logoDescription ? `LOGO: ${project.logoDescription}` : '',
     `UI ELEMENTS: ${project.uiElements}`,
     `PRODUCT: ${PROJECT_DESCRIPTIONS[project.name] ?? project.name}`,
     `TAGLINE: ${profile.tagline}`,
     `VISUAL STYLE: ${profile.visualStyle}`,
     `MOTION LANGUAGE: ${profile.motionHints}`,
-  ].join('\n');
+  ].filter(Boolean).join('\n');
 
   if (!controls) return base;
-  return `${base}\n\n${buildPremiumPatternsBlock(project, controls)}`;
+  return `${base}\n\n${buildBrandKitBlock(project, controls)}\n\n${buildPremiumPatternsBlock(project, controls)}`;
 }
 
 export function buildPlanningPrompt(
@@ -218,6 +317,17 @@ export function buildPlanningPrompt(
     : `Use a premium ${duration}s product explainer structure.`;
 
   const premiumBlock = buildPremiumPatternsBlock(project, controls);
+  const brandKit = buildBrandKitBlock(project, controls);
+  const styleStructure = buildVideoStyleStructureBlock(controls.videoStyle, duration);
+  const palette = resolveBrandPalette(controls, project.brandPalette ?? project.colors);
+  const hookWindow = controls.videoStyle === 'promo-hook' || controls.videoStyle === 'vertical-social'
+    ? Math.min(4, Math.floor(duration * 0.12))
+    : Math.min(6, Math.floor(duration * 0.2));
+  const scriptPacing = controls.videoStyle === 'testimonial'
+    ? 'quote-led, warm proof pacing'
+    : controls.videoStyle === 'product-deep-dive'
+      ? 'cinematic slow-build with feature beat pauses'
+      : `${controls.pace} pacing`;
 
   return `${options.localBias}
 
@@ -237,22 +347,28 @@ BRAND PROFILE:
 - UI focus: ${profile.uiFocus}
 - Visual style: ${profile.visualStyle}
 
+${brandKit}
+
+${styleStructure}
+
 ${premiumBlock}
 
 OUTPUT FORMAT (use these exact section headers):
 
-## HOOK (0–${Math.min(6, Math.floor(duration * 0.2))}s)
-[LOCAL] Kinetic typography (${controls.textAnimationStyle}) + pain-point line. One punchy spoken hook sentence.
+## HOOK (0–${hookWindow}s)
+[LOCAL] Kinetic typography (${controls.textAnimationStyle}, font ${controls.fontFamily ?? 'Inter'}) + pain-point line. Video style ${controls.videoStyle}: ${controls.videoStyle === 'promo-hook' || controls.videoStyle === 'vertical-social' ? 'MAXIMUM hook density, immediate visual punch' : 'strong opener leading to reveal'}.
 
 ## SCRIPT (${duration}s total)
-Write second-by-second narration with timestamps (e.g. 0:00–0:06). ${controls.pace} pacing, ${controls.moodTone} tone. Include micro-pauses for UI beats and ${controls.musicSyncLevel} music sync cues.
+Write second-by-second narration with timestamps (e.g. 0:00–0:06). ${scriptPacing}, ${controls.moodTone} tone. Include micro-pauses for UI beats and ${controls.musicSyncLevel} music sync cues. CTA emphasis: ${controls.videoStyle === 'promo-hook' ? 'HIGH from mid-point' : controls.videoStyle === 'testimonial' ? 'soft close after proof' : 'standard branded close'}.
 
 ## STORYBOARD
 Number each beat. For each: timestamp, [LOCAL] or [CLOUD], shot description, on-screen text, UI motion (specify motion brush areas if any), named camera move (${controls.cameraStyle}), transition. Apply Constraint Sandwich per shot.
 
 ## KEYFRAME PROMPTS
 Exactly 5 numbered prompts (1. 2. 3. 4. 5.) for image generation. Each 80–140 words. Include:
-- Brand accent color ${project.colors} in UI chrome and highlights
+- Full brand palette: PRIMARY ${palette.primary}, ACCENT ${palette.accent}${palette.secondary ? `, SECONDARY ${palette.secondary}` : ''} — each on distinct UI elements (not one flat colour)
+- Font style: ${controls.fontFamily ?? 'Inter'} for UI labels and headlines
+- Logo placement hint: ${controls.logoPlacement ?? 'bottom-right'}${controls.logoLock ? ' (locked)' : ''}
 - ${controls.aspectRatio} composition (${dims.width}x${dims.height}), shallow depth of field where appropriate
 - Crisp readable SaaS UI (not blurry mockups)
 - Lighting: ${controls.lightingHints ?? 'soft key + rim'} | Lens: ${controls.lensOptics ?? 'standard'}
@@ -263,14 +379,15 @@ Exactly 5 numbered prompts (1. 2. 3. 4. 5.) for image generation. Each 80–140 
 
 ## HYPERFRAMES SCENES
 List timed scene blocks for local canvas render (${duration}s total): kinetic, sidebar, card, progress, metric, bars, quote, logo, cta, keyframe, endcard.
-Include start/end ms (scaled for ${duration}s), scene type, label/text, motion brush area refs, and which keyframe index (0–4) to weave in.
+Scene density for ${controls.videoStyle}: ${controls.videoStyle === 'promo-hook' || controls.videoStyle === 'vertical-social' ? 'HIGH — short beats, skip long holds' : controls.videoStyle === 'product-deep-dive' ? 'LOW — longer feature beats' : 'BALANCED'}.
+Include start/end ms (scaled for ${duration}s), scene type, label/text, palette role per element (primary/accent/secondary), motion brush area refs, and which keyframe index (0–4) to weave in.
 Specify ${controls.endCardCTAStyle} end card and ${controls.textAnimationStyle} text animations.
 
 ## CTA CLOSE
 Final 3 seconds: ${controls.endCardCTAStyle} style — logo lockup + "${profile.cta}" + "${profile.tagline}"
 
 ## PREMIUM GATES CHECKLIST
-Explicitly confirm: motion brush areas defined, first/last frames anchored, ref strength ${controls.refConsistencyStrength}%, physics ${controls.physicsIntensity}, audio sync ${controls.musicSyncLevel}, variant count ${controls.variantCount}.
+Explicitly confirm: videoStyle ${controls.videoStyle} structure followed, full palette used distinctly, font ${controls.fontFamily ?? 'Inter'}, logo placement ${controls.logoPlacement ?? 'bottom-right'}, motion brush areas defined, first/last frames anchored, ref strength ${controls.refConsistencyStrength}%, physics ${controls.physicsIntensity}, audio sync ${controls.musicSyncLevel}, variant count ${controls.variantCount}.
 
 Rules:
 - Prioritize high-production-value LOCAL Hyperframes sequences (dashboard UI, metrics, kinetic type, quotes).
@@ -311,6 +428,11 @@ export function assessPlanQuality(plan: string, controls?: VideoControls): PlanQ
     if (!/director|co-director/i.test(lower)) issues.push('Director mode brief not incorporated');
   }
   if (!/mcsla|constraint sandwich|subject anchor/i.test(lower)) issues.push('Missing MCSLA / Constraint Sandwich patterns');
+  if (c.videoStyle !== 'custom' && !new RegExp(c.videoStyle.replace(/-/g, '[\\s-]'), 'i').test(lower) && !/video style|promo hook|explainer|testimonial|vertical social|deep dive|how.it.works/i.test(lower)) {
+    issues.push(`Video style "${c.videoStyle}" not reflected in plan`);
+  }
+  if (!/primary|accent|palette|secondary/i.test(lower)) issues.push('Full brand palette not specified in plan');
+  if (c.logoLock && !/logo.*lock|logo placement/i.test(lower)) issues.push('Logo lock/placement not addressed');
   if (!String(c.lengthSec).includes(plan.match(/\d+s/)?.[0]?.replace('s', '') ?? 'x') && !new RegExp(`${c.lengthSec}\\s*s`, 'i').test(plan)) {
     if (!/\d+\s*s\s*total/i.test(plan)) issues.push(`Duration should reference ${c.lengthSec}s`);
   }
@@ -361,6 +483,14 @@ export function assessControlsGates(plan: string, controls: VideoControls): Cont
     { label: `Variant count ${controls.variantCount}`, pass: controls.variantCount <= 1 || /variant/i.test(lower) },
   ]);
 
+  check('Brand Kit', [
+    { label: `Video style ${controls.videoStyle}`, pass: controls.videoStyle === 'custom' || /video style|promo|explainer|testimonial|vertical|deep dive|how.it/i.test(lower) },
+    { label: 'Palette colours distinct', pass: /primary|accent|palette|secondary/i.test(lower) },
+    { label: `Font ${controls.fontFamily ?? 'Inter'}`, pass: !controls.fontFamily || /font|typography|inter|poppins|serif|mono/i.test(lower) },
+    { label: `Logo ${controls.logoPlacement ?? 'placement'}`, pass: !controls.logoLock || /logo/i.test(lower) },
+    { label: `Length ${controls.lengthSec}s density`, pass: new RegExp(`${controls.lengthSec}\\s*s`, 'i').test(plan) || /\d+\s*s\s*total/i.test(plan) },
+  ]);
+
   return gates;
 }
 
@@ -391,12 +521,16 @@ export function buildImagePromptsPrompt(
   const profile = getBrandVideoProfile(project);
   const dims = getCanvasDimensions(c.aspectRatio, c.customAspect);
   const premium = buildPremiumPatternsBlock(project, c);
+  const brandKit = buildBrandKitBlock(project, c);
+  const palette = resolveBrandPalette(c, project.brandPalette ?? project.colors);
 
   return `You are a senior marketing art director creating keyframe prompts for ${imageModel}.
 
-BRAND: ${project.name} | ACCENT: ${project.colors} | TONE: ${project.tone}
+BRAND: ${project.name} | TONE: ${project.tone}
 UI FOCUS: ${profile.uiFocus}
 VISUAL STYLE: ${profile.visualStyle}
+
+${brandKit}
 
 ${premium}
 
@@ -405,7 +539,9 @@ Each prompt must be 90–150 words and include ALL of:
 - Subject Anchor: specific SaaS UI screen for ${project.name} at ${c.refConsistencyStrength}% fidelity
 - Composition: ${c.aspectRatio} (${dims.width}x${dims.height}), rule-of-thirds
 - Constraint Sandwich: shot + action + constraints (no drift, no morph)
-- Brand colors: accent ${project.colors} on buttons, progress rings, highlights
+- Brand palette roles: PRIMARY ${palette.primary} on CTA/buttons, ACCENT ${palette.accent} on rings/highlights, SECONDARY ${palette.secondary ?? palette.primary} on badges/charts, NEUTRAL ${palette.neutral ?? '#0f172a'} on backgrounds
+- Font: ${c.fontFamily ?? 'Inter'} for all UI text
+- Logo: ${c.logoPlacement ?? 'bottom-right'}${c.logoLock ? ' LOCKED' : ''}
 - Lighting: ${c.lightingHints ?? 'soft studio key + rim'} | Lens: ${c.lensOptics ?? 'standard'}
 - UI clarity: sharp readable text labels, realistic dashboard chrome
 - Motion hint: ${c.cameraStyle} camera, ${c.motionIntensity} — what Hyperframes animates
@@ -427,13 +563,25 @@ export function buildKeyframeImagePrompt(
   const c = controls ?? DEFAULT_VIDEO_CONTROLS;
   const profile = getBrandVideoProfile(project);
   const dims = getCanvasDimensions(c.aspectRatio, c.customAspect);
-  const roles = ['HOOK hero frame', 'dashboard reveal', 'feature highlight', 'social proof / metrics', 'CTA end card'];
+  const styleRoles: Record<string, string[]> = {
+    'promo-hook': ['HOOK hero — max punch', 'poll/metric flash', 'social proof flash', 'CTA preview', 'bold end card'],
+    testimonial: ['soft hook', 'quote hero frame', 'results/metrics proof', 'workflow UI', 'warm brand close'],
+    'how-it-works': ['HOW IT WORKS title', 'Step 1 UI', 'Step 2 progress', 'Step 3 handoff', 'CTA end card'],
+    'vertical-social': ['vertical hook text', 'poll bars 9:16', 'feed cards', 'metric pulse', 'minimal CTA'],
+    'product-deep-dive': ['cinematic open', 'feature A deep', 'feature B interaction', 'metrics stack', 'premium CTA'],
+    explainer: ['HOOK hero frame', 'dashboard reveal', 'feature highlight', 'social proof / metrics', 'CTA end card'],
+    custom: ['HOOK hero frame', 'dashboard reveal', 'feature highlight', 'social proof / metrics', 'CTA end card'],
+  };
+  const roles = styleRoles[c.videoStyle] ?? styleRoles.explainer;
   const aspectLabel = c.aspectRatio === '16:9' ? '16:9' : c.aspectRatio;
+  const palette = resolveBrandPalette(c, project.brandPalette ?? project.colors);
 
   return `Create a single ultra-high-quality ${aspectLabel} (${dims.width}x${dims.height}) marketing keyframe image for ${project.name}.
 
-SCENE: ${roles[sceneIndex] ?? `scene ${sceneIndex + 1}`}
-BRAND ACCENT: ${project.colors} — use on primary buttons, progress indicators, and highlights
+SCENE: ${roles[sceneIndex] ?? `scene ${sceneIndex + 1}`} | VIDEO STYLE: ${c.videoStyle}
+BRAND PALETTE: PRIMARY ${palette.primary} (buttons/CTA), ACCENT ${palette.accent} (rings/highlights), SECONDARY ${palette.secondary ?? palette.primary} (badges), NEUTRAL ${palette.neutral ?? '#0f172a'} (backgrounds)
+FONT: ${c.fontFamily ?? 'Inter'} — all UI typography
+LOGO: ${c.logoPlacement ?? 'bottom-right'}${c.logoLock ? ' LOCKED in frame' : ''}
 REF STRENGTH: ${c.refConsistencyStrength}% — lock UI chrome, typography, brand elements
 VISUAL STYLE: ${profile.visualStyle}
 LENS: ${c.lensOptics ?? '50mm standard'} | MOOD: ${c.moodTone}
@@ -463,9 +611,11 @@ export function buildPreRenderRefinementPrompt(
   const gates = assessControlsGates(script, c);
   const failedGates = gates.filter((g) => !g.pass).map((g) => `${g.category}: ${g.issues.join(', ')}`);
 
+  const palette = resolveBrandPalette(c, project.brandPalette ?? project.colors);
   return `Quick quality check before final render for ${project.name}.
 
-CONTROLS: ${c.lengthSec}s ${c.aspectRatio} | camera ${c.cameraStyle} | motion ${c.motionIntensity} | ref ${c.refConsistencyStrength}%
+CONTROLS: ${c.lengthSec}s ${c.aspectRatio} | style ${c.videoStyle} | camera ${c.cameraStyle} | motion ${c.motionIntensity} | ref ${c.refConsistencyStrength}%
+BRAND: PRIMARY ${palette.primary}, ACCENT ${palette.accent} | font ${c.fontFamily ?? 'Inter'} | logo ${c.logoPlacement ?? 'bottom-right'}
 PREMIUM GATES: ${failedGates.length ? failedGates.join('; ') : 'all passing'}
 
 SCRIPT (excerpt): ${script.slice(0, 1200)}
@@ -511,7 +661,8 @@ export function extractHyperframesDesc(
   if (match?.[1]?.trim()) {
     const excerpt = match[1].trim().slice(0, 2000);
     if (controls) {
-      return `${excerpt}\n[Controls: ${controls.lengthSec}s ${controls.aspectRatio}, camera ${controls.cameraStyle}, motion ${controls.motionIntensity}, brush areas: ${controls.motionBrush.areas.length}]`;
+      const palette = resolveBrandPalette(controls, project.brandPalette ?? project.colors);
+      return `${excerpt}\n[Controls: ${controls.lengthSec}s ${controls.aspectRatio}, style ${controls.videoStyle}, palette PRIMARY ${palette.primary}/ACCENT ${palette.accent}, font ${controls.fontFamily ?? 'Inter'}, camera ${controls.cameraStyle}, motion ${controls.motionIntensity}, logo ${controls.logoPlacement ?? 'bottom-right'}, brush areas: ${controls.motionBrush.areas.length}]`;
     }
     return excerpt;
   }
@@ -519,7 +670,14 @@ export function extractHyperframesDesc(
   const profile = getBrandVideoProfile(project);
   const tpl = templateId ? getTemplateLabel(templateId) : 'Custom explainer';
   const duration = controls?.lengthSec ?? 30;
-  return `${tpl} for ${project.name} (${duration}s): ${profile.kineticHook} opener → ${profile.featureLabels.join(' → ')} → metric proof → "${profile.quote.text}" → ${profile.cta}. Accent ${project.colors}. ${profile.motionHints}${controls ? `. Camera: ${controls.cameraStyle}, mood: ${controls.moodTone}` : ''}`;
+  const palette = controls
+    ? resolveBrandPalette(controls, project.brandPalette ?? project.colors)
+    : null;
+  const paletteNote = palette
+    ? `Palette PRIMARY ${palette.primary}, ACCENT ${palette.accent}${palette.secondary ? `, SECONDARY ${palette.secondary}` : ''}`
+    : `Accent ${project.colors}`;
+  const styleNote = controls ? `Style ${controls.videoStyle}, ` : '';
+  return `${tpl} for ${project.name} (${duration}s): ${styleNote}${profile.kineticHook} opener → ${profile.featureLabels.join(' → ')} → metric proof → "${profile.quote.text}" → ${profile.cta}. ${paletteNote}. ${profile.motionHints}${controls ? `. Camera: ${controls.cameraStyle}, mood: ${controls.moodTone}, font: ${controls.fontFamily ?? 'Inter'}` : ''}`;
 }
 
 export function extractKeyframeSection(plan: string): string {

@@ -10,11 +10,14 @@ import {
   type TextAnimStyle,
   type EndCardCTAStyle,
   type MotionBrushArea,
+  type LogoPlacement,
+  type VideoStyle,
   DEFAULT_VIDEO_CONTROLS,
   getCanvasDimensions,
   mapToRenderer,
   parseMotionVector,
   resolveLengthMs,
+  resolveBrandPalette,
   scaleTimingsForLength,
   type ScaledSceneTiming,
 } from './videoControls';
@@ -33,6 +36,8 @@ export interface ProjectBrand {
   quote?: { text: string; author: string };
   cta?: string;
   tagline?: string;
+  brandPalette?: import('./videoControls').BrandPalette;
+  fontFamily?: string;
 }
 
 export interface RenderOptions {
@@ -67,12 +72,38 @@ export interface Scene {
   endCardVariant?: EndCardCTAStyle;
 }
 
+interface BrandDrawColors {
+  primary: string;
+  accent: string;
+  secondary: string;
+  neutral: string;
+  surface: string;
+  text: string;
+}
+
 interface RenderContext {
   controls: VideoControls;
   rendererParams: ReturnType<typeof mapToRenderer>;
   motionBrushAreas: MotionBrushArea[];
   physicsWeight: number;
   refStrength: number;
+}
+
+function resolveBrandDrawColors(brand: ProjectBrand): BrandDrawColors {
+  const p = brand.brandPalette;
+  const fallback = brand.accent || '#6366f1';
+  return {
+    primary: p?.primary ?? fallback,
+    accent: p?.accent ?? fallback,
+    secondary: p?.secondary ?? p?.primary ?? '#818CF8',
+    neutral: p?.neutral ?? '#0f172a',
+    surface: p?.surface ?? '#1e2937',
+    text: p?.text ?? '#e2e8f0',
+  };
+}
+
+function brandFont(family: string | undefined, size: number, weight: string | number = 'bold'): string {
+  return `${weight} ${size}px ${family ?? 'system-ui, sans-serif'}`;
 }
 
 const DEFAULT_WIDTH = 1920;
@@ -83,7 +114,8 @@ let ffmpegInstance: FFmpeg | null = null;
 let ffmpegLoadFailed = false;
 
 const FFMPEG_CDN_BASES = [
-  '/ffmpeg',
+  // Local /ffmpeg folder intentionally omitted (no assets in public/).
+  // CDNs below are fallbacks; they can be unreliable with the strict COEP/COOP headers in vite.config.
   'https://unpkg.com/@ffmpeg/core@0.12.6/dist/esm',
   'https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.6/dist/esm',
 ];
@@ -134,20 +166,21 @@ function resolveRenderContext(opts: RenderOptions): RenderContext {
   };
 }
 
-function getMoodGradientStops(mood: string, accent: string): [string, string, string] {
+function getMoodGradientStops(mood: string, colors: BrandDrawColors): [string, string, string] {
+  const { neutral, surface, accent, secondary } = colors;
   switch (mood) {
     case 'energetic':
-      return ['#0a0614', '#1a0c28', accent + '28'];
+      return [neutral, surface, secondary + '44'];
     case 'futuristic':
-      return ['#040810', '#0a1628', accent + '35'];
+      return [neutral, surface, accent + '38'];
     case 'warm':
-      return ['#140c08', '#221610', accent + '22'];
+      return [neutral, surface, secondary + '33'];
     case 'minimalist':
-      return ['#080808', '#101010', accent + '10'];
+      return [neutral, surface, accent + '14'];
     case 'premium':
-      return ['#050810', '#0c1424', accent + '20'];
+      return [neutral, surface, accent + '28'];
     default:
-      return ['#060a14', '#0c1222', accent + '18'];
+      return [neutral, surface, accent + '22'];
   }
 }
 
@@ -156,10 +189,10 @@ function applyMoodOverlay(
   w: number,
   h: number,
   mood: string,
-  accent: string,
+  colors: BrandDrawColors,
   alpha = 0.35,
 ) {
-  const [a, b, c] = getMoodGradientStops(mood, accent);
+  const [a, b, c] = getMoodGradientStops(mood, colors);
   const grad = ctx.createLinearGradient(0, 0, w, h);
   grad.addColorStop(0, a);
   grad.addColorStop(0.55, b);
@@ -343,8 +376,8 @@ function brandAccentWeight(intensity: string): number {
 
 // ── Drawing primitives (premium motion-graphics style) ──
 
-function drawGradientBg(ctx: CanvasRenderingContext2D, w: number, h: number, accent: string, mood = 'professional') {
-  const [a, b, c] = getMoodGradientStops(mood, accent);
+function drawGradientBg(ctx: CanvasRenderingContext2D, w: number, h: number, colors: BrandDrawColors, mood = 'professional') {
+  const [a, b, c] = getMoodGradientStops(mood, colors);
   const grad = ctx.createLinearGradient(0, 0, w, h);
   grad.addColorStop(0, a);
   grad.addColorStop(0.55, b);
@@ -355,7 +388,7 @@ function drawGradientBg(ctx: CanvasRenderingContext2D, w: number, h: number, acc
 
 function drawDashboardCard(
   ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number,
-  accent: string, progress: number, label = 'Feature', alpha = 1, physicsWeight = 0,
+  colors: BrandDrawColors, progress: number, label = 'Feature', alpha = 1, physicsWeight = 0, fontFamily?: string,
 ) {
   const eased = physicsWeight > 0 ? easeWithPhysics(progress, physicsWeight) : easeOutCubic(progress);
   const lift = eased * 14;
@@ -365,139 +398,138 @@ function drawDashboardCard(
   ctx.shadowColor = 'rgba(0,0,0,0.45)';
   ctx.shadowBlur = 24;
   ctx.shadowOffsetY = 8;
-  ctx.fillStyle = '#1e2937';
+  ctx.fillStyle = colors.surface;
   ctx.fillRect(slideX, y - lift, w, h);
   ctx.shadowBlur = 0;
-  ctx.fillStyle = accent;
+  ctx.fillStyle = colors.primary;
   ctx.fillRect(slideX, y - lift, w, 6);
-  ctx.fillStyle = '#e2e8f0';
-  ctx.font = 'bold 22px system-ui';
+  ctx.fillStyle = colors.text;
+  ctx.font = brandFont(fontFamily, 22);
   ctx.fillText(label, slideX + 20, y - lift + 38);
-  ctx.fillStyle = '#64748b';
-  ctx.font = '14px system-ui';
+  ctx.fillStyle = colors.secondary + 'aa';
+  ctx.font = brandFont(fontFamily, 14, 'normal');
   ctx.fillText('Live • Updated just now', slideX + 20, y - lift + 62);
   for (let i = 0; i < 4; i++) {
     const barH = 20 + Math.sin(i * 1.2 + progress * 4) * 12;
-    ctx.fillStyle = i === 2 ? accent + 'cc' : '#334155';
+    ctx.fillStyle = i === 2 ? colors.accent + 'cc' : colors.neutral + '88';
     ctx.fillRect(slideX + 20 + i * 28, y - lift + h - 30 - barH, 18, barH);
   }
   ctx.restore();
 }
 
-function drawProgressRing(ctx: CanvasRenderingContext2D, cx: number, cy: number, r: number, progress: number, accent: string, alpha = 1, physicsWeight = 0) {
+function drawProgressRing(ctx: CanvasRenderingContext2D, cx: number, cy: number, r: number, progress: number, colors: BrandDrawColors, alpha = 1, physicsWeight = 0, fontFamily?: string) {
   ctx.save();
   ctx.globalAlpha = alpha;
-  ctx.strokeStyle = '#1e2937';
+  ctx.strokeStyle = colors.surface;
   ctx.lineWidth = 14;
   ctx.beginPath();
   ctx.arc(cx, cy, r, 0, Math.PI * 2);
   ctx.stroke();
   const eased = physicsWeight > 0 ? easeWithPhysics(progress, physicsWeight) : easeOutCubic(progress);
-  ctx.strokeStyle = accent;
+  ctx.strokeStyle = colors.accent;
   ctx.lineWidth = 14;
   ctx.lineCap = 'round';
   ctx.beginPath();
   ctx.arc(cx, cy, r, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * Math.min(1, Math.max(0, eased)));
   ctx.stroke();
-  ctx.fillStyle = '#e2e8f0';
-  ctx.font = 'bold 28px system-ui';
+  ctx.fillStyle = colors.text;
+  ctx.font = brandFont(fontFamily, 28);
   ctx.textAlign = 'center';
   ctx.fillText(`${Math.floor(eased * 100)}%`, cx, cy + 10);
   ctx.textAlign = 'left';
   ctx.restore();
 }
 
-function drawLinearProgress(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, progress: number, accent: string, alpha = 1) {
+function drawLinearProgress(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, progress: number, colors: BrandDrawColors, alpha = 1) {
   ctx.save();
   ctx.globalAlpha = alpha;
-  ctx.fillStyle = '#1e2937';
+  ctx.fillStyle = colors.surface;
   ctx.fillRect(x, y, w, 12);
   const eased = easeOutCubic(progress);
-  ctx.fillStyle = accent;
+  ctx.fillStyle = colors.primary;
   ctx.fillRect(x, y, w * eased, 12);
   ctx.restore();
 }
 
-function drawMetricCounter(ctx: CanvasRenderingContext2D, x: number, y: number, value: number, label: string, delta: number, accent: string, alpha = 1, physicsWeight = 0, progress = 1) {
+function drawMetricCounter(ctx: CanvasRenderingContext2D, x: number, y: number, value: number, label: string, delta: number, colors: BrandDrawColors, alpha = 1, physicsWeight = 0, progress = 1, fontFamily?: string) {
   ctx.save();
   ctx.globalAlpha = alpha;
   const eased = physicsWeight > 0 ? easeWithPhysics(progress, physicsWeight) : easeOutCubic(progress);
   const displayVal = Math.floor(lerp(12, value, eased));
-  ctx.fillStyle = '#e2e8f0';
-  ctx.font = 'bold 52px system-ui';
+  ctx.fillStyle = colors.text;
+  ctx.font = brandFont(fontFamily, 52);
   ctx.fillText(displayVal.toString(), x, y);
-  ctx.fillStyle = '#64748b';
-  ctx.font = '15px system-ui';
+  ctx.fillStyle = colors.secondary + 'bb';
+  ctx.font = brandFont(fontFamily, 15, 'normal');
   ctx.fillText(label, x, y + 24);
   if (delta) {
-    ctx.fillStyle = accent;
-    ctx.font = 'bold 18px system-ui';
+    ctx.fillStyle = colors.accent;
+    ctx.font = brandFont(fontFamily, 18);
     ctx.fillText(`+${Math.floor(displayVal * 0.15)}%`, x + 130, y - 6);
   }
   ctx.restore();
 }
 
-function drawSidebar(ctx: CanvasRenderingContext2D, h: number, accent: string, projectName: string, progress: number, brandWeight = 0.75) {
+function drawSidebar(ctx: CanvasRenderingContext2D, h: number, colors: BrandDrawColors, projectName: string, progress: number, brandWeight = 0.75, fontFamily?: string) {
   const slide = lerp(-260, 0, easeOutCubic(progress));
   ctx.save();
-  ctx.fillStyle = '#0f172a';
+  ctx.fillStyle = colors.neutral;
   ctx.fillRect(slide, 0, 260, h);
-  ctx.fillStyle = accent;
+  ctx.fillStyle = colors.primary;
   ctx.globalAlpha = brandWeight;
-  ctx.font = 'bold 16px system-ui';
+  ctx.font = brandFont(fontFamily, 16);
   ctx.fillText(projectName, 20 + slide, 40);
   ctx.globalAlpha = 1;
-  ctx.fillStyle = '#64748b';
-  ctx.font = '13px system-ui';
+  ctx.font = brandFont(fontFamily, 13, 'normal');
   ['Dashboard', 'Insights', 'Team', 'Settings'].forEach((t, i) => {
     const active = i === 0;
     if (active) {
-      ctx.fillStyle = accent + '33';
+      ctx.fillStyle = colors.accent + '33';
       ctx.fillRect(12 + slide, 68 + i * 32, 236, 26);
-      ctx.fillStyle = accent;
+      ctx.fillStyle = colors.accent;
     } else {
-      ctx.fillStyle = '#64748b';
+      ctx.fillStyle = colors.secondary + '99';
     }
     ctx.fillText(t, 24 + slide, 86 + i * 32);
   });
   ctx.restore();
 }
 
-function drawTopbar(ctx: CanvasRenderingContext2D, w: number, projectName: string, progress: number) {
+function drawTopbar(ctx: CanvasRenderingContext2D, w: number, projectName: string, progress: number, colors: BrandDrawColors, fontFamily?: string) {
   const slide = lerp(-w, 0, easeOutCubic(progress));
   ctx.save();
-  ctx.fillStyle = '#111c2e';
+  ctx.fillStyle = colors.surface;
   ctx.fillRect(260 + slide, 0, w - 260, 68);
-  ctx.fillStyle = '#e2e8f0';
-  ctx.font = 'bold 20px system-ui';
+  ctx.fillStyle = colors.text;
+  ctx.font = brandFont(fontFamily, 20);
   ctx.fillText(projectName, 290 + slide, 44);
   ctx.restore();
 }
 
-function drawTestimonialQuote(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, quote: string, author: string, accent: string, progress: number) {
+function drawTestimonialQuote(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, quote: string, author: string, colors: BrandDrawColors, progress: number, fontFamily?: string) {
   const slideY = lerp(y + 60, y, easeOutCubic(progress));
   ctx.save();
   ctx.globalAlpha = easeOutCubic(progress);
-  ctx.fillStyle = '#1e2937';
+  ctx.fillStyle = colors.surface;
   ctx.fillRect(x, slideY, w, 120);
-  ctx.fillStyle = accent;
+  ctx.fillStyle = colors.primary;
   ctx.fillRect(x, slideY, 5, 120);
-  ctx.fillStyle = '#e2e8f0';
-  ctx.font = '17px system-ui';
+  ctx.fillStyle = colors.text;
+  ctx.font = brandFont(fontFamily, 17, 'normal');
   const display = quote.length > 90 ? quote.slice(0, 88) + '…' : quote;
   ctx.fillText('"' + display + '"', x + 22, slideY + 36);
-  ctx.fillStyle = '#64748b';
-  ctx.font = '13px system-ui';
+  ctx.fillStyle = colors.secondary + 'cc';
+  ctx.font = brandFont(fontFamily, 13, 'normal');
   ctx.fillText('— ' + author, x + 22, slideY + 96);
   ctx.restore();
 }
 
-function drawKineticText(ctx: CanvasRenderingContext2D, text: string, x: number, y: number, elapsed: number, accent: string, progress: number, style: TextAnimStyle = 'kinetic') {
+function drawKineticText(ctx: CanvasRenderingContext2D, text: string, x: number, y: number, elapsed: number, colors: BrandDrawColors, progress: number, style: TextAnimStyle = 'kinetic', fontFamily?: string) {
   ctx.save();
   if (style === 'simple-fade') {
     ctx.globalAlpha = easeOutCubic(progress);
-    ctx.fillStyle = '#e2e8f0';
-    ctx.font = 'bold 72px system-ui';
+    ctx.fillStyle = colors.text;
+    ctx.font = brandFont(fontFamily, 72);
     ctx.fillText(text, x, y);
     ctx.restore();
     return;
@@ -508,11 +540,11 @@ function drawKineticText(ctx: CanvasRenderingContext2D, text: string, x: number,
     ctx.translate(x, y);
     ctx.scale(scale, scale);
     ctx.translate(-x, -y);
-    ctx.fillStyle = '#fff';
-    ctx.font = 'bold 88px system-ui';
+    ctx.fillStyle = colors.text;
+    ctx.font = brandFont(fontFamily, 88);
     ctx.globalAlpha = easeOutCubic(progress);
     ctx.fillText(text, x, y);
-    ctx.fillStyle = accent;
+    ctx.fillStyle = colors.primary;
     ctx.fillRect(x, y + 18, Math.min(600, text.length * 48), 8);
     ctx.restore();
     return;
@@ -520,11 +552,11 @@ function drawKineticText(ctx: CanvasRenderingContext2D, text: string, x: number,
 
   if (style === 'glitch') {
     const jitter = (1 - progress) * 4;
-    ctx.fillStyle = accent;
+    ctx.fillStyle = colors.accent;
     ctx.globalAlpha = 0.4;
-    ctx.font = 'bold 76px system-ui';
+    ctx.font = brandFont(fontFamily, 76);
     ctx.fillText(text, x + jitter, y - jitter);
-    ctx.fillStyle = '#e2e8f0';
+    ctx.fillStyle = colors.text;
     ctx.globalAlpha = easeOutCubic(progress);
     ctx.fillText(text, x, y);
     ctx.restore();
@@ -535,8 +567,8 @@ function drawKineticText(ctx: CanvasRenderingContext2D, text: string, x: number,
   ctx.translate(x, y);
   ctx.scale(scale, scale);
   ctx.translate(-x, -y);
-  ctx.fillStyle = '#e2e8f0';
-  ctx.font = 'bold 80px system-ui';
+  ctx.fillStyle = colors.text;
+  ctx.font = brandFont(fontFamily, 80);
   const letters = text.split('');
   let ox = x;
   letters.forEach((ch, i) => {
@@ -548,32 +580,77 @@ function drawKineticText(ctx: CanvasRenderingContext2D, text: string, x: number,
     ox += ctx.measureText(ch).width + 3;
   });
   ctx.globalAlpha = easeOutCubic(progress);
-  ctx.fillStyle = accent;
+  ctx.fillStyle = colors.accent;
   ctx.fillRect(x, y + 22, Math.min(520, text.length * 42), 6);
   ctx.restore();
 }
 
-function drawLogoLockup(ctx: CanvasRenderingContext2D, x: number, y: number, name: string, accent: string, tagline: string, progress: number, brandWeight = 0.75) {
-  const scale = lerp(0.7, 1, easeOutCubic(progress)) * (0.85 + brandWeight * 0.15);
+function drawLogoLockup(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  name: string,
+  colors: BrandDrawColors,
+  tagline: string,
+  progress: number,
+  brandWeight = 0.75,
+  fontFamily?: string,
+  sizeScale = 1,
+  opacity = 1,
+) {
+  const scale = lerp(0.7, 1, easeOutCubic(progress)) * (0.85 + brandWeight * 0.15) * sizeScale;
   ctx.save();
-  ctx.globalAlpha = easeOutCubic(progress) * brandWeight;
+  ctx.globalAlpha = easeOutCubic(progress) * brandWeight * opacity;
   ctx.translate(x, y);
   ctx.scale(scale, scale);
   ctx.translate(-x, -y);
-  ctx.fillStyle = accent;
+  ctx.fillStyle = colors.primary;
   ctx.beginPath();
   ctx.roundRect(x, y, 22, 22, 4);
   ctx.fill();
-  ctx.fillStyle = '#e2e8f0';
-  ctx.font = 'bold 26px system-ui';
+  ctx.fillStyle = colors.text;
+  ctx.font = brandFont(fontFamily, 26);
   ctx.fillText(name, x + 34, y + 18);
-  ctx.fillStyle = '#64748b';
-  ctx.font = '14px system-ui';
+  ctx.fillStyle = colors.secondary + 'cc';
+  ctx.font = brandFont(fontFamily, 14, 'normal');
   ctx.fillText(tagline, x + 34, y + 40);
   ctx.restore();
 }
 
-function drawCtaButton(ctx: CanvasRenderingContext2D, x: number, y: number, label: string, accent: string, progress: number, style: EndCardCTAStyle = 'standard') {
+function getLogoPlacementLayout(
+  placement: LogoPlacement,
+  w: number,
+  h: number,
+): { x: number; y: number; scale: number; opacity: number } {
+  const pad = 28;
+  switch (placement) {
+    case 'top-left':
+      return { x: 280 + pad, y: pad + 12, scale: 0.82, opacity: 1 };
+    case 'bottom-right':
+      return { x: w - 240, y: h - 52, scale: 0.7, opacity: 0.92 };
+    case 'watermark':
+      return { x: w - 200, y: h - 44, scale: 0.58, opacity: 0.5 };
+    case 'hero':
+      return { x: w * 0.17, y: h * 0.52, scale: 1.15, opacity: 1 };
+    case 'centered':
+      return { x: w * 0.5 - 90, y: h * 0.5 - 24, scale: 1.05, opacity: 1 };
+    case 'end-card-only':
+      return { x: w * 0.1, y: h * 0.35, scale: 1, opacity: 1 };
+    default:
+      return { x: w - 240, y: h - 52, scale: 0.7, opacity: 0.92 };
+  }
+}
+
+function shouldDrawPersistentLogo(controls: VideoControls, elapsed: number, durationMs: number): boolean {
+  const placement = controls.logoPlacement ?? 'bottom-right';
+  if (placement === 'end-card-only') return false;
+  if (placement === 'centered') return false;
+  if (placement === 'hero') return elapsed < durationMs * 0.38;
+  if (placement === 'watermark') return true;
+  return !!controls.logoLock && (placement === 'top-left' || placement === 'bottom-right');
+}
+
+function drawCtaButton(ctx: CanvasRenderingContext2D, x: number, y: number, label: string, colors: BrandDrawColors, progress: number, style: EndCardCTAStyle = 'standard', fontFamily?: string) {
   const pulse = style === 'bold' ? 1 + Math.sin(progress * Math.PI * 6) * 0.04 : 1 + Math.sin(progress * Math.PI * 4) * 0.02;
   const baseW = style === 'minimal' ? 240 : style === 'bold' ? 360 : 300;
   const baseH = style === 'bold' ? 64 : 56;
@@ -584,20 +661,20 @@ function drawCtaButton(ctx: CanvasRenderingContext2D, x: number, y: number, labe
   ctx.save();
   ctx.globalAlpha = easeOutCubic(progress);
   if (style === 'branded-slate') {
-    ctx.fillStyle = 'rgba(0,0,0,0.75)';
+    ctx.fillStyle = colors.neutral + 'ee';
     ctx.fillRect(bx - 20, by - 20, bw + 40, bh + 60);
-    ctx.fillStyle = accent + '44';
+    ctx.fillStyle = colors.primary + '66';
     ctx.fillRect(bx - 20, by - 20, 6, bh + 60);
   }
-  ctx.shadowColor = accent + '88';
+  ctx.shadowColor = colors.accent + '88';
   ctx.shadowBlur = style === 'bold' ? 28 : 20;
-  ctx.fillStyle = accent;
+  ctx.fillStyle = colors.primary;
   ctx.beginPath();
   ctx.roundRect(bx, by, bw, bh, style === 'bold' ? 14 : 10);
   ctx.fill();
   ctx.shadowBlur = 0;
-  ctx.fillStyle = '#fff';
-  ctx.font = style === 'bold' ? 'bold 24px system-ui' : 'bold 20px system-ui';
+  ctx.fillStyle = colors.text;
+  ctx.font = brandFont(fontFamily, style === 'bold' ? 24 : 20);
   ctx.textAlign = 'center';
   ctx.fillText(label, x + baseW / 2, y + (style === 'bold' ? 40 : 36));
   ctx.textAlign = 'left';
@@ -612,23 +689,25 @@ function drawEndCard(
   progress: number,
   style: EndCardCTAStyle,
 ) {
-  const accent = brand.accent || '#6366f1';
+  const colors = resolveBrandDrawColors(brand);
+  const font = brand.fontFamily;
+  const endLogo = getLogoPlacementLayout('end-card-only', w, h);
   ctx.save();
   ctx.globalAlpha = easeOutCubic(progress);
   if (style === 'branded-slate') {
-    ctx.fillStyle = 'rgba(6,10,20,0.92)';
+    ctx.fillStyle = colors.neutral + 'ee';
     ctx.fillRect(0, 0, w, h);
-    drawLogoLockup(ctx, w * 0.1, h * 0.35, brand.name, accent, brand.tagline ?? '', progress, 1);
-    drawCtaButton(ctx, w * 0.1, h * 0.55, brand.cta ?? 'Get started', accent, progress, 'branded-slate');
+    drawLogoLockup(ctx, endLogo.x, endLogo.y, brand.name, colors, brand.tagline ?? '', progress, 1, font, endLogo.scale);
+    drawCtaButton(ctx, w * 0.1, h * 0.55, brand.cta ?? 'Get started', colors, progress, 'branded-slate', font);
   } else if (style === 'minimal') {
-    ctx.fillStyle = 'rgba(0,0,0,0.5)';
+    ctx.fillStyle = colors.neutral + '88';
     ctx.fillRect(0, h - 120, w, 120);
-    ctx.fillStyle = '#e2e8f0';
-    ctx.font = '16px system-ui';
+    ctx.fillStyle = colors.text;
+    ctx.font = brandFont(font, 16, 'normal');
     ctx.fillText(brand.name, 40, h - 70);
-    drawCtaButton(ctx, w - 320, h - 90, brand.cta ?? 'Learn more', accent, progress, 'minimal');
+    drawCtaButton(ctx, w - 320, h - 90, brand.cta ?? 'Learn more', colors, progress, 'minimal', font);
   } else {
-    drawCtaButton(ctx, w / 2 - 150, h / 2, brand.cta ?? 'Start free trial', accent, progress, style);
+    drawCtaButton(ctx, w / 2 - 150, h / 2, brand.cta ?? 'Start free trial', colors, progress, style, font);
   }
   ctx.restore();
 }
@@ -664,11 +743,12 @@ function drawKeyframePanel(
   h: number,
   progress: number,
   motion: string,
-  accent: string,
+  colors: BrandDrawColors,
   brandName: string,
   index: number,
   total: number,
   ctx2: RenderContext,
+  fontFamily?: string,
   anchor?: 'start' | 'end' | 'interp',
   anchorProgress?: number,
 ) {
@@ -676,8 +756,8 @@ function drawKeyframePanel(
   const alpha = easeOutCubic(Math.min(1, progress * 2)) * easeOutCubic(Math.min(1, (1 - progress) * 2 + 0.5));
   ctx.globalAlpha = Math.min(1, alpha * (0.7 + ctx2.refStrength * 0.3));
 
-  drawGradientBg(ctx, w, h, accent, ctx2.controls.moodTone);
-  applyMoodOverlay(ctx, w, h, ctx2.controls.moodTone, accent, 0.2);
+  drawGradientBg(ctx, w, h, colors, ctx2.controls.moodTone);
+  applyMoodOverlay(ctx, w, h, ctx2.controls.moodTone, colors, 0.2);
 
   const pad = Math.round(w * 0.04);
   const areaW = w - pad * 2;
@@ -742,20 +822,20 @@ function drawKeyframePanel(
   ctx.shadowBlur = 0;
   applyLensOptics(ctx, w, h, ctx2.controls.lensOptics, progress);
 
-  ctx.strokeStyle = accent + '66';
+  ctx.strokeStyle = colors.accent + '66';
   ctx.lineWidth = 2;
   ctx.strokeRect(dx - 2, dy - 2, dw + 4, dh + 4);
 
   const barGrad = ctx.createLinearGradient(0, h - 72, 0, h);
   barGrad.addColorStop(0, 'transparent');
-  barGrad.addColorStop(1, 'rgba(0,0,0,0.75)');
+  barGrad.addColorStop(1, colors.neutral + 'cc');
   ctx.fillStyle = barGrad;
   ctx.fillRect(0, h - 72, w, 72);
-  ctx.fillStyle = '#e2e8f0';
-  ctx.font = 'bold 16px system-ui';
+  ctx.fillStyle = colors.text;
+  ctx.font = brandFont(fontFamily, 16);
   ctx.fillText(`${brandName}`, pad, h - 38);
-  ctx.fillStyle = accent;
-  ctx.font = '13px system-ui';
+  ctx.fillStyle = colors.primary;
+  ctx.font = brandFont(fontFamily, 13, 'normal');
   const anchorLabel = anchor ? ` • ${anchor} frame` : '';
   ctx.fillText(`Scene ${index + 1} of ${total}${anchorLabel}`, pad, h - 18);
 
@@ -767,7 +847,7 @@ function drawBarsWithBrush(
   w: number,
   h: number,
   progress: number,
-  accent: string,
+  colors: BrandDrawColors,
   alpha: number,
   ctx2: RenderContext,
   baseX = 840,
@@ -791,7 +871,8 @@ function drawBarsWithBrush(
     }
 
     ctx.globalAlpha = alpha;
-    ctx.fillStyle = i === 3 ? accent : '#1e2937';
+    const barColor = i === 3 ? colors.accent : i === 1 ? colors.primary + '99' : colors.surface;
+    ctx.fillStyle = barColor;
     ctx.fillRect(baseX + i * 72 + extraX, baseY - bp * 180 + extraH, barW, bp * 180 - extraH);
   }
   ctx.globalAlpha = 1;
@@ -814,51 +895,61 @@ function drawScene(
   const alpha = sceneAlpha(scene, elapsed);
   if (alpha <= 0.01) return;
 
-  const accent = brand.accent || '#6366f1';
+  const colors = resolveBrandDrawColors(brand);
+  const font = brand.fontFamily;
   const name = brand.name || 'Forge';
   const params = scene.params ?? {};
   const textStyle = (scene.textVariant ?? renderCtx.rendererParams.textStyle) as TextAnimStyle;
   const endStyle = (scene.endCardVariant ?? renderCtx.rendererParams.endCardStyle) as EndCardCTAStyle;
   const brandWeight = brandAccentWeight(renderCtx.controls.brandIntensity);
+  const logoPlacement = renderCtx.controls.logoPlacement ?? 'bottom-right';
 
   switch (scene.type) {
     case 'bg':
-      drawGradientBg(ctx, w, h, accent, renderCtx.controls.moodTone);
+      drawGradientBg(ctx, w, h, colors, renderCtx.controls.moodTone);
       break;
     case 'sidebar':
-      drawSidebar(ctx, h, accent, name, progress, brandWeight);
+      drawSidebar(ctx, h, colors, name, progress, brandWeight, font);
       break;
     case 'topbar':
-      drawTopbar(ctx, w, name, progress);
+      drawTopbar(ctx, w, name, progress, colors, font);
       break;
     case 'card':
-      drawDashboardCard(ctx, w * 0.17, h * 0.13, w * 0.23, h * 0.2, accent, progress, (params.label as string) || 'AI Feature', alpha, renderCtx.physicsWeight);
+      drawDashboardCard(ctx, w * 0.17, h * 0.13, w * 0.23, h * 0.2, colors, progress, (params.label as string) || 'AI Feature', alpha, renderCtx.physicsWeight, font);
       break;
     case 'progress':
-      drawProgressRing(ctx, w * 0.33, h * 0.28, Math.min(w, h) * 0.06, progress, accent, alpha, renderCtx.physicsWeight);
+      drawProgressRing(ctx, w * 0.33, h * 0.28, Math.min(w, h) * 0.06, progress, colors, alpha, renderCtx.physicsWeight, font);
       break;
     case 'linear':
-      drawLinearProgress(ctx, w * 0.19, h * 0.37, w * 0.27, progress, accent, alpha);
+      drawLinearProgress(ctx, w * 0.19, h * 0.37, w * 0.27, progress, colors, alpha);
       break;
     case 'metric': {
       const target = (params.target as number) ?? 78;
-      drawMetricCounter(ctx, w * 0.47, h * 0.22, target, (params.label as string) || 'Impact', Math.floor(target * 0.15), accent, alpha, renderCtx.physicsWeight, progress);
+      drawMetricCounter(ctx, w * 0.47, h * 0.22, target, (params.label as string) || 'Impact', Math.floor(target * 0.15), colors, alpha, renderCtx.physicsWeight, progress, font);
       break;
     }
     case 'quote':
-      drawTestimonialQuote(ctx, w * 0.17, h * 0.39, w * 0.44, (params.quote as string) || '', (params.author as string) || '', accent, progress);
+      drawTestimonialQuote(ctx, w * 0.17, h * 0.39, w * 0.44, (params.quote as string) || '', (params.author as string) || '', colors, progress, font);
       break;
     case 'kinetic':
-      drawKineticText(ctx, (params.text as string) || 'GROW FASTER', w * 0.16, h * 0.18, elapsed, accent, progress, textStyle);
+      drawKineticText(ctx, (params.text as string) || 'GROW FASTER', w * 0.16, h * 0.18, elapsed, colors, progress, textStyle, font);
       break;
-    case 'logo':
-      drawLogoLockup(ctx, w * 0.17, h * 0.56, name, accent, (params.tagline as string) || brand.tagline || 'Make it real.', progress, brandWeight);
+    case 'logo': {
+      const layout = getLogoPlacementLayout(
+        logoPlacement === 'watermark' || logoPlacement === 'top-left' || logoPlacement === 'bottom-right'
+          ? 'hero'
+          : logoPlacement,
+        w,
+        h,
+      );
+      drawLogoLockup(ctx, layout.x, layout.y, name, colors, (params.tagline as string) || brand.tagline || 'Make it real.', progress, brandWeight, font, layout.scale);
       break;
+    }
     case 'bars':
-      drawBarsWithBrush(ctx, w, h, progress, accent, alpha, renderCtx);
+      drawBarsWithBrush(ctx, w, h, progress, colors, alpha, renderCtx);
       break;
     case 'cta':
-      drawCtaButton(ctx, w * 0.34, h * 0.48, (params.label as string) || 'Start free trial', accent, progress, endStyle);
+      drawCtaButton(ctx, w * 0.34, h * 0.48, (params.label as string) || brand.cta || 'Start free trial', colors, progress, endStyle, font);
       break;
     case 'endcard':
       drawEndCard(ctx, w, h, brand, progress, endStyle);
@@ -879,8 +970,9 @@ function drawScene(
         drawKeyframePanel(
           ctx, img, w, h, progress,
           (params.motion as string) || renderCtx.rendererParams.cameraMotion,
-          accent, name, idx, keyframeImgs.length,
+          colors, name, idx, keyframeImgs.length,
           renderCtx,
+          font,
           anchor,
           anchor === 'interp' ? anchorProgress : undefined,
         );
@@ -958,6 +1050,112 @@ function applyControlsToScenes(scenes: Scene[], controls: VideoControls, duratio
   }));
 }
 
+function finalizeScenesWithEndCard(scenes: Scene[], duration: number, endCardStyle: EndCardCTAStyle): Scene[] {
+  if (endCardStyle === 'branded-slate') {
+    const filtered = scenes.filter((s) => s.type !== 'cta');
+    filtered.push({ start: Math.round(duration * 0.88), end: duration, type: 'endcard' });
+    return filtered;
+  }
+  return scenes;
+}
+
+function getScenesForVideoStyle(
+  style: VideoStyle,
+  brand: ProjectBrand,
+  controls: VideoControls,
+  duration: number,
+): Scene[] {
+  const p = defaultBrandParams(brand);
+  const endCardStyle = controls.endCardCTAStyle;
+  const d = duration;
+  let scenes: Scene[];
+
+  switch (style) {
+    case 'promo-hook': {
+      scenes = [
+        { start: 0, end: d, type: 'bg' },
+        { start: 0, end: Math.round(d * 0.2), type: 'kinetic', params: { text: p.kinetic } },
+        { start: Math.round(d * 0.12), end: Math.round(d * 0.5), type: 'bars' },
+        { start: Math.round(d * 0.32), end: Math.round(d * 0.68), type: 'metric', params: { label: p.metrics[0], target: 92 } },
+        { start: Math.round(d * 0.65), end: d, type: 'cta', params: { label: p.cta } },
+        { start: Math.round(d * 0.78), end: d, type: 'logo', params: { tagline: p.tagline } },
+      ];
+      break;
+    }
+    case 'testimonial': {
+      scenes = [
+        { start: 0, end: d, type: 'bg' },
+        { start: 0, end: Math.round(d * 0.12), type: 'kinetic', params: { text: 'REAL RESULTS' } },
+        { start: Math.round(d * 0.1), end: Math.round(d * 0.42), type: 'quote', params: { quote: p.quote.text, author: p.quote.author } },
+        { start: Math.round(d * 0.35), end: Math.round(d * 0.62), type: 'metric', params: { label: p.metrics[0], target: 67 } },
+        { start: Math.round(d * 0.52), end: Math.round(d * 0.78), type: 'card', params: { label: p.features[2] ?? 'Team View' } },
+        { start: Math.round(d * 0.72), end: d, type: 'logo', params: { tagline: p.tagline } },
+        { start: Math.round(d * 0.82), end: d, type: 'cta', params: { label: p.cta } },
+      ];
+      break;
+    }
+    case 'how-it-works': {
+      scenes = [
+        { start: 0, end: d, type: 'bg' },
+        { start: 0, end: Math.round(d * 0.1), type: 'kinetic', params: { text: 'HOW IT WORKS' } },
+        { start: Math.round(d * 0.08), end: Math.round(d * 0.22), type: 'sidebar' },
+        { start: Math.round(d * 0.18), end: Math.round(d * 0.38), type: 'card', params: { label: `Step 1 — ${p.features[0]}` } },
+        { start: Math.round(d * 0.32), end: Math.round(d * 0.52), type: 'progress' },
+        { start: Math.round(d * 0.46), end: Math.round(d * 0.66), type: 'card', params: { label: `Step 2 — ${p.features[1]}` } },
+        { start: Math.round(d * 0.58), end: Math.round(d * 0.78), type: 'metric', params: { label: p.metrics[0], target: 85 } },
+        { start: Math.round(d * 0.72), end: d, type: 'logo', params: { tagline: p.tagline } },
+        { start: Math.round(d * 0.82), end: d, type: 'cta', params: { label: p.cta } },
+      ];
+      break;
+    }
+    case 'vertical-social': {
+      scenes = [
+        { start: 0, end: d, type: 'bg' },
+        { start: 0, end: Math.round(d * 0.25), type: 'kinetic', params: { text: p.kinetic } },
+        { start: Math.round(d * 0.18), end: Math.round(d * 0.55), type: 'bars' },
+        { start: Math.round(d * 0.42), end: Math.round(d * 0.75), type: 'metric', params: { label: p.metrics[1] ?? 'Growth', target: 84 } },
+        { start: Math.round(d * 0.68), end: d, type: 'cta', params: { label: p.cta } },
+      ];
+      break;
+    }
+    case 'product-deep-dive': {
+      scenes = [
+        { start: 0, end: d, type: 'bg' },
+        { start: 0, end: Math.round(d * 0.08), type: 'kinetic', params: { text: p.features[0].toUpperCase() } },
+        { start: Math.round(d * 0.06), end: Math.round(d * 0.2), type: 'sidebar' },
+        { start: Math.round(d * 0.14), end: Math.round(d * 0.32), type: 'card', params: { label: p.features[0] } },
+        { start: Math.round(d * 0.28), end: Math.round(d * 0.46), type: 'progress' },
+        { start: Math.round(d * 0.4), end: Math.round(d * 0.58), type: 'card', params: { label: p.features[1] } },
+        { start: Math.round(d * 0.52), end: Math.round(d * 0.7), type: 'linear' },
+        { start: Math.round(d * 0.64), end: Math.round(d * 0.82), type: 'metric', params: { label: p.metrics[0], target: 94 } },
+        { start: Math.round(d * 0.74), end: Math.round(d * 0.9), type: 'quote', params: { quote: p.quote.text, author: p.quote.author } },
+        { start: Math.round(d * 0.84), end: d, type: 'logo', params: { tagline: p.tagline } },
+        { start: Math.round(d * 0.88), end: d, type: 'cta', params: { label: p.cta } },
+      ];
+      break;
+    }
+    case 'explainer':
+    default: {
+      scenes = [
+        { start: 0, end: d, type: 'bg' },
+        { start: 0, end: Math.round(d * 0.16), type: 'kinetic', params: { text: p.kinetic } },
+        { start: Math.round(d * 0.12), end: Math.round(d * 0.2), type: 'sidebar' },
+        { start: Math.round(d * 0.16), end: Math.round(d * 0.38), type: 'card', params: { label: p.features[0] } },
+        { start: Math.round(d * 0.3), end: Math.round(d * 0.48), type: 'progress' },
+        { start: Math.round(d * 0.42), end: Math.round(d * 0.6), type: 'metric', params: { label: p.metrics[0], target: 78 } },
+        { start: Math.round(d * 0.54), end: Math.round(d * 0.72), type: 'card', params: { label: p.features[1] } },
+        { start: Math.round(d * 0.64), end: Math.round(d * 0.82), type: 'quote', params: { quote: p.quote.text, author: p.quote.author } },
+        { start: Math.round(d * 0.76), end: d, type: 'logo', params: { tagline: p.tagline } },
+        { start: Math.round(d * 0.84), end: d, type: 'cta', params: { label: p.cta } },
+      ];
+      break;
+    }
+  }
+
+  scenes = finalizeScenesWithEndCard(scenes, d, endCardStyle);
+  return applyControlsToScenes(scenes, controls, d);
+}
+
 function getTemplateScenes(id: TemplateId, brand: ProjectBrand, controls?: VideoControls): Scene[] {
   const p = defaultBrandParams(brand);
   const duration = controls ? resolveLengthMs(controls) : TEMPLATE_DURATIONS[id];
@@ -1020,10 +1218,7 @@ function getTemplateScenes(id: TemplateId, brand: ProjectBrand, controls?: Video
     ];
   }
 
-  if (endCardStyle === 'branded-slate') {
-    scenes = scenes.filter((s) => s.type !== 'cta');
-    scenes.push({ start: Math.round(duration * 0.88), end: duration, type: 'endcard' });
-  }
+  scenes = finalizeScenesWithEndCard(scenes, duration, endCardStyle);
 
   if (controls) {
     return applyControlsToScenes(scenes, controls, duration);
@@ -1046,7 +1241,9 @@ export function getScenesForTemplateOrGoal(
 
   let base: Scene[];
 
-  if (templateId && TEMPLATE_LABELS[templateId]) {
+  if (controls?.videoStyle && controls.videoStyle !== 'custom') {
+    base = getScenesForVideoStyle(controls.videoStyle, brand, controls, duration);
+  } else if (templateId && TEMPLATE_LABELS[templateId]) {
     base = getTemplateScenes(templateId, brand, controls);
   } else {
     const p = defaultBrandParams(brand);
@@ -1135,8 +1332,12 @@ export function createHyperframesRenderer(
     : getScenesForTemplateOrGoal(scenesOrTemplate, '', brand, keyframeImgs.length, opts.controls);
 
   function draw(elapsed: number) {
+    const colors = resolveBrandDrawColors(brand);
+    const font = brand.fontFamily;
+    const brandWeight = brandAccentWeight(renderCtx.controls.brandIntensity);
+
     ctx.clearRect(0, 0, width, height);
-    drawGradientBg(ctx, width, height, brand.accent || '#6366f1', renderCtx.controls.moodTone);
+    drawGradientBg(ctx, width, height, colors, renderCtx.controls.moodTone);
 
     const activeKeyframe = currentScenes.find(
       (s) => s.type === 'keyframe' && elapsed >= s.start && elapsed <= s.end,
@@ -1145,16 +1346,35 @@ export function createHyperframesRenderer(
     if (activeKeyframe) {
       drawScene(ctx, activeKeyframe, brand, elapsed, width, height, keyframeImgs, firstLastImgs, renderCtx);
     } else {
-      drawSidebar(ctx, height, brand.accent, brand.name, 1, brandAccentWeight(renderCtx.controls.brandIntensity));
-      drawTopbar(ctx, width, brand.name, 1);
+      drawSidebar(ctx, height, colors, brand.name, 1, brandWeight, font);
+      drawTopbar(ctx, width, brand.name, 1, colors, font);
     }
 
     for (const scene of currentScenes) {
       if (scene.type === 'keyframe' || scene.type === 'bg') continue;
+      if (scene.type === 'logo' && shouldDrawPersistentLogo(renderCtx.controls, elapsed, durationMs)) continue;
       if (elapsed >= scene.start && elapsed <= scene.end) {
         if (activeKeyframe && (scene.type === 'sidebar' || scene.type === 'topbar')) continue;
         drawScene(ctx, scene, brand, elapsed, width, height, keyframeImgs, firstLastImgs, renderCtx);
       }
+    }
+
+    if (shouldDrawPersistentLogo(renderCtx.controls, elapsed, durationMs)) {
+      const placement = renderCtx.controls.logoPlacement ?? 'bottom-right';
+      const layout = getLogoPlacementLayout(placement, width, height);
+      drawLogoLockup(
+        ctx,
+        layout.x,
+        layout.y,
+        brand.name,
+        colors,
+        brand.tagline ?? 'Make it real.',
+        1,
+        brandWeight,
+        font,
+        layout.scale,
+        layout.opacity,
+      );
     }
 
     applyLensOptics(ctx, width, height, renderCtx.controls.lensOptics, elapsed / durationMs);
@@ -1269,9 +1489,10 @@ export async function postProcessWithFFmpeg(
 ): Promise<PostProcessResult> {
   const preset = QUALITY_PRESETS[opts.preset];
   const controls = opts.controls ?? DEFAULT_VIDEO_CONTROLS;
+  const colors = resolveBrandDrawColors(opts.brand);
   const brandName = opts.brand.name.replace(/'/g, "\\'");
   const tagline = (opts.brand.tagline ?? 'Marketing preview').replace(/'/g, "\\'");
-  const accentHex = (opts.brand.accent || '#6366f1').replace('#', '');
+  const accentHex = (colors.primary || opts.brand.accent || '#6366f1').replace('#', '');
   const durationSec = opts.durationMs / 1000;
 
   try {
@@ -1385,11 +1606,22 @@ export function createSaaSAnimationCanvas(
     quote?: { text: string; author: string };
     cta?: string;
     tagline?: string;
+    brandPalette?: import('./videoControls').BrandPalette;
+    fontFamily?: string;
   },
   goal: string,
   opts: RenderOptions = {},
 ) {
-  const accent = project.colors?.match(/#[0-9A-Fa-f]{6}/)?.[0] ?? project.colors ?? '#6366f1';
+  const controls = opts.controls ?? DEFAULT_VIDEO_CONTROLS;
+  const resolvedPalette =
+    project.brandPalette
+    ?? controls.brandPalette
+    ?? resolveBrandPalette(controls, project.colors);
+  const accent =
+    resolvedPalette.accent
+    ?? project.colors?.match(/#[0-9A-Fa-f]{6}/)?.[0]
+    ?? project.colors
+    ?? '#6366f1';
   const brand: ProjectBrand = {
     name: project.name,
     accent,
@@ -1401,9 +1633,9 @@ export function createSaaSAnimationCanvas(
     quote: project.quote,
     cta: project.cta,
     tagline: project.tagline,
+    brandPalette: resolvedPalette,
+    fontFamily: project.fontFamily ?? controls.fontFamily,
   };
-
-  const controls = opts.controls ?? DEFAULT_VIDEO_CONTROLS;
   const rendererParams = mapToRenderer(controls, opts.fps);
   const durationMs = opts.durationMs ?? rendererParams.durationMs;
 

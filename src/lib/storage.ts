@@ -1,3 +1,9 @@
+import {
+  CLUBCENSUS_BRAND_KIT,
+  isLegacyClubCensusPalette,
+  type FullBrandKit,
+} from './brandKits';
+
 export interface Project {
   id: string;
   name: string;
@@ -5,6 +11,116 @@ export interface Project {
   uiElements: string;
   tone: string;
   characterRef?: string;
+  /** Multi-swatch brand palette (primary, accent, secondary, neutral, surface, text) */
+  brandPalette?: string[];
+  logoUrl?: string;
+  defaultFont?: string;
+  logoDescription?: string;
+  brandVoice?: string;
+  personality?: string;
+  values?: string;
+}
+
+export interface SavedBrandKit {
+  id: string;
+  name: string;
+  palette: string[];
+  defaultFont: string;
+  logoDescription?: string;
+  brandVoice?: string;
+  personality?: string;
+  values?: string;
+  createdAt: number;
+}
+
+const CUSTOM_BRAND_KITS_KEY = 'ff_v2_custom_brand_kits';
+
+const DEFAULT_PROJECT_PALETTES: Record<string, string[]> = {
+  p_stratabody: ['#4F46E5', '#6366F1', '#818CF8', '#0F172A', '#1E293B', '#E2E8F0'],
+  p_speedmend: ['#0EA47A', '#10B981', '#34D399', '#0C1F17', '#134E3A', '#D1FAE5'],
+  p_clubcensus: CLUBCENSUS_BRAND_KIT.paletteArray,
+};
+
+function applyFullBrandKitToProject(project: Project, kit: FullBrandKit): Project {
+  return {
+    ...project,
+    colors: kit.primaryColor,
+    brandPalette: [...kit.paletteArray],
+    defaultFont: kit.defaultFont,
+    uiElements: kit.uiElements,
+    tone: kit.tone,
+    logoDescription: kit.logoDescription,
+    brandVoice: kit.brandVoice,
+    personality: kit.personality,
+    values: kit.values,
+  };
+}
+
+/** Derive a 4-color palette from a single accent hex (legacy projects). */
+export function deriveBrandPaletteFromColor(color: string): string[] {
+  const primary = color.match(/#[0-9A-Fa-f]{6}/)?.[0] ?? '#6366f1';
+  return [primary, primary, '#1E293B', '#E2E8F0'];
+}
+
+export function migrateProject(project: Project): Project {
+  let migrated = { ...project };
+  if (!migrated.brandPalette?.length) {
+    migrated.brandPalette =
+      DEFAULT_PROJECT_PALETTES[migrated.id] ?? deriveBrandPaletteFromColor(migrated.colors);
+  }
+  if (!migrated.defaultFont) {
+    migrated.defaultFont = 'Inter';
+  }
+  if (
+    migrated.id === 'p_clubcensus' &&
+    (isLegacyClubCensusPalette(migrated.colors, migrated.brandPalette) || !migrated.brandVoice)
+  ) {
+    migrated = applyFullBrandKitToProject(migrated, CLUBCENSUS_BRAND_KIT);
+  }
+  return migrated;
+}
+
+export function projectFromBrandKit(kit: FullBrandKit, base?: Partial<Project>): Project {
+  return applyFullBrandKitToProject(
+    {
+      id: base?.id ?? `p_${kit.id}`,
+      name: base?.name ?? kit.name,
+      colors: kit.primaryColor,
+      uiElements: kit.uiElements,
+      tone: kit.tone,
+      ...base,
+    },
+    kit,
+  );
+}
+
+export function loadCustomBrandKits(): SavedBrandKit[] {
+  try {
+    const saved = localStorage.getItem(CUSTOM_BRAND_KITS_KEY);
+    return saved ? (JSON.parse(saved) as SavedBrandKit[]) : [];
+  } catch {
+    return [];
+  }
+}
+
+export function saveCustomBrandKit(kit: SavedBrandKit): SavedBrandKit[] {
+  const existing = loadCustomBrandKits();
+  const idx = existing.findIndex((k) => k.id === kit.id);
+  const next = idx >= 0
+    ? existing.map((k, i) => (i === idx ? kit : k))
+    : [kit, ...existing];
+  localStorage.setItem(CUSTOM_BRAND_KITS_KEY, JSON.stringify(next));
+  return next;
+}
+
+export function deleteCustomBrandKit(id: string): SavedBrandKit[] {
+  const next = loadCustomBrandKits().filter((k) => k.id !== id);
+  localStorage.setItem(CUSTOM_BRAND_KITS_KEY, JSON.stringify(next));
+  return next;
+}
+
+function migrateProjects(projects: Project[]): Project[] {
+  return projects.map(migrateProject);
 }
 
 export interface Generation {
@@ -90,11 +206,34 @@ export function saveModelPreferences(prefs: Partial<ModelPreferences>): ModelPre
 
 export function loadProjects(): Project[] {
   const saved = localStorage.getItem(PROJECTS_KEY);
-  if (saved) return JSON.parse(saved);
+  if (saved) {
+    const parsed = JSON.parse(saved) as Project[];
+    const migrated = migrateProjects(parsed);
+    if (JSON.stringify(parsed) !== JSON.stringify(migrated)) {
+      localStorage.setItem(PROJECTS_KEY, JSON.stringify(migrated));
+    }
+    return migrated;
+  }
   const defaults: Project[] = [
-    { id: 'p_stratabody', name: 'StrataBody', colors: '#4F46E5', uiElements: 'dashboard, AI coach cards, progress rings, live tracking', tone: 'motivational, clean, scientific' },
-    { id: 'p_speedmend', name: 'SpeedMend', colors: '#0EA47A', uiElements: 'kanban, quick actions, repair timeline, team handoff', tone: 'fast, practical, trustworthy' },
-    { id: 'p_clubcensus', name: 'ClubCensus', colors: '#C026D3', uiElements: 'polls, live results, community feed, member avatars', tone: 'engaging, community-focused, fun' },
+    {
+      id: 'p_stratabody',
+      name: 'StrataBody',
+      colors: '#4F46E5',
+      brandPalette: DEFAULT_PROJECT_PALETTES.p_stratabody,
+      defaultFont: 'Inter',
+      uiElements: 'dashboard, AI coach cards, progress rings, live tracking',
+      tone: 'motivational, clean, scientific',
+    },
+    {
+      id: 'p_speedmend',
+      name: 'SpeedMend',
+      colors: '#0EA47A',
+      brandPalette: DEFAULT_PROJECT_PALETTES.p_speedmend,
+      defaultFont: 'Inter',
+      uiElements: 'kanban, quick actions, repair timeline, team handoff',
+      tone: 'fast, practical, trustworthy',
+    },
+    projectFromBrandKit(CLUBCENSUS_BRAND_KIT, { id: 'p_clubcensus', name: 'ClubCensus' }),
   ];
   localStorage.setItem(PROJECTS_KEY, JSON.stringify(defaults));
   return defaults;

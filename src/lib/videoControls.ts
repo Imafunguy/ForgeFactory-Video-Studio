@@ -3,6 +3,10 @@
  * Full parametric control surface for premium local + hybrid video generation.
  */
 
+import { CLUBCENSUS_BRAND_KIT } from './brandKits';
+
+export { CLUBCENSUS_BRAND_KIT, getClubCensusControlsPatch } from './brandKits';
+
 // ── Core enums / union types ──
 
 export type LengthPreset = 5 | 10 | 15 | 30 | 45 | 60 | 'custom';
@@ -44,6 +48,32 @@ export type MusicSyncLevel = 'none' | 'light' | 'medium' | 'strong';
 export type VariantStrategy = 'best-critic' | 'diversity' | 'user-pick' | 'lock-max';
 
 export type PhysicsIntensity = 'low' | 'medium' | 'high';
+
+export type VideoStyle =
+  | 'promo-hook'
+  | 'explainer'
+  | 'testimonial'
+  | 'how-it-works'
+  | 'vertical-social'
+  | 'product-deep-dive'
+  | 'custom';
+
+export type LogoPlacement =
+  | 'top-left'
+  | 'bottom-right'
+  | 'hero'
+  | 'end-card-only'
+  | 'watermark'
+  | 'centered';
+
+export interface BrandPalette {
+  primary: string;
+  accent: string;
+  secondary?: string;
+  neutral?: string;
+  surface?: string;
+  text?: string;
+}
 
 // ── Motion brush & refs ──
 
@@ -180,6 +210,12 @@ export interface VideoControls {
   genre?: string;
   customStyleText?: string;
   heroFrameFirst?: boolean;
+  videoStyle: VideoStyle;
+  brandPalette?: BrandPalette;
+  fontFamily?: string;
+  logoPlacement?: LogoPlacement;
+  accentLock?: boolean;
+  logoLock?: boolean;
 }
 
 export interface PremiumPresetBundle {
@@ -206,7 +242,222 @@ export interface RendererControlParams {
   endCardStyle: EndCardCTAStyle;
   musicSyncLevel: MusicSyncLevel;
   beatIntervalMs?: number;
+  videoStyle?: VideoStyle;
+  brandPalette?: BrandPalette;
+  fontFamily?: string;
+  logoPlacement?: LogoPlacement;
+  accentLock?: boolean;
+  logoLock?: boolean;
 }
+
+// ── Brand palette helpers ──
+
+const SAMPLE_PALETTES: Record<string, BrandPalette> = {
+  stratabody: {
+    primary: '#4F46E5',
+    accent: '#6366F1',
+    secondary: '#818CF8',
+    neutral: '#0F172A',
+    surface: '#1E293B',
+    text: '#E2E8F0',
+  },
+  clubcensus: CLUBCENSUS_BRAND_KIT.palette,
+  speedmend: {
+    primary: '#0EA47A',
+    accent: '#10B981',
+    secondary: '#34D399',
+    neutral: '#0C1F17',
+    surface: '#134E3A',
+    text: '#D1FAE5',
+  },
+};
+
+export function brandPaletteFromArray(colors: string[]): BrandPalette {
+  return {
+    primary: colors[0] ?? '#6366f1',
+    accent: colors[1] ?? colors[0] ?? '#6366f1',
+    secondary: colors[2],
+    neutral: colors[3],
+    surface: colors[4],
+    text: colors[5],
+  };
+}
+
+export function deriveBrandPaletteFromAccent(accent: string): BrandPalette {
+  const primary = accent.match(/#[0-9A-Fa-f]{6}/)?.[0] ?? '#6366f1';
+  return {
+    primary,
+    accent: primary,
+    secondary: '#818CF8',
+    neutral: '#0F172A',
+    surface: '#1E293B',
+    text: '#E2E8F0',
+  };
+}
+
+export function resolveBrandPalette(
+  controls: VideoControls,
+  projectColors?: string | string[],
+): BrandPalette {
+  if (controls.brandPalette?.primary) {
+    return controls.brandPalette;
+  }
+  if (Array.isArray(projectColors) && projectColors.length > 0) {
+    return brandPaletteFromArray(projectColors);
+  }
+  if (typeof projectColors === 'string') {
+    return deriveBrandPaletteFromAccent(projectColors);
+  }
+  return deriveBrandPaletteFromAccent('#6366f1');
+}
+
+export function getControlsFromProject(project: {
+  colors: string;
+  brandPalette?: string[];
+  defaultFont?: string;
+}): Partial<VideoControls> {
+  const palette = project.brandPalette?.length
+    ? brandPaletteFromArray(project.brandPalette)
+    : deriveBrandPaletteFromAccent(project.colors);
+  return {
+    brandPalette: palette,
+    fontFamily: project.defaultFont ?? 'Inter',
+    accentLock: true,
+  };
+}
+
+export interface VideoStyleOption {
+  id: VideoStyle;
+  label: string;
+  description: string;
+  lengthHint: string;
+}
+
+export function listVideoStyles(): VideoStyleOption[] {
+  return [
+    { id: 'promo-hook', label: 'Promo Hook', description: 'Punchy hook + immediate CTA density', lengthHint: '5–10s' },
+    { id: 'explainer', label: 'Explainer', description: 'Hook → reveal → metrics → CTA', lengthHint: '15–45s' },
+    { id: 'testimonial', label: 'Testimonial', description: 'Quote-led proof + results close', lengthHint: '20–45s' },
+    { id: 'how-it-works', label: 'How it Works', description: 'Step-by-step numbered reveals', lengthHint: '30–60s' },
+    { id: 'vertical-social', label: 'Vertical Social', description: '9:16 fast-paced text-on-screen', lengthHint: '5–15s' },
+    { id: 'product-deep-dive', label: 'Product Deep Dive', description: 'Cinematic multi-feature beats', lengthHint: '45–60s+' },
+    { id: 'custom', label: 'Custom', description: 'Full manual control', lengthHint: 'Any' },
+  ];
+}
+
+export function getDefaultControlsForStyle(
+  style: VideoStyle,
+  projectAccent?: string,
+): Partial<VideoControls> {
+  const palette = projectAccent
+    ? deriveBrandPaletteFromAccent(projectAccent)
+    : undefined;
+
+  const base: Partial<VideoControls> = { videoStyle: style };
+  if (palette) base.brandPalette = palette;
+
+  switch (style) {
+    case 'promo-hook':
+      return {
+        ...base,
+        lengthSec: 8,
+        lengthPreset: 'custom',
+        aspectRatio: '9:16',
+        pace: 'fast-paced',
+        motionIntensity: 'high-energy',
+        moodTone: 'energetic',
+        cameraStyle: 'dynamic',
+        textAnimationStyle: 'bold-reveal',
+        endCardCTAStyle: 'bold',
+      };
+    case 'explainer':
+      return {
+        ...base,
+        lengthSec: 30,
+        lengthPreset: 30,
+        aspectRatio: '16:9',
+        pace: 'balanced',
+        motionIntensity: 'medium',
+        moodTone: 'premium',
+        cameraStyle: 'orbiting',
+        textAnimationStyle: 'kinetic',
+        endCardCTAStyle: 'branded-slate',
+      };
+    case 'testimonial':
+      return {
+        ...base,
+        lengthSec: 35,
+        lengthPreset: 'custom',
+        aspectRatio: '16:9',
+        pace: 'balanced',
+        motionIntensity: 'medium',
+        moodTone: 'warm',
+        cameraStyle: 'cinematic-pan',
+        textAnimationStyle: 'simple-fade',
+        endCardCTAStyle: 'standard',
+      };
+    case 'how-it-works':
+      return {
+        ...base,
+        lengthSec: 45,
+        lengthPreset: 45,
+        aspectRatio: '16:9',
+        pace: 'balanced',
+        motionIntensity: 'medium',
+        moodTone: 'professional',
+        cameraStyle: 'dolly',
+        textAnimationStyle: 'kinetic',
+        endCardCTAStyle: 'standard',
+      };
+    case 'vertical-social':
+      return {
+        ...base,
+        lengthSec: 10,
+        lengthPreset: 10,
+        aspectRatio: '9:16',
+        pace: 'fast-paced',
+        motionIntensity: 'high-energy',
+        moodTone: 'futuristic',
+        cameraStyle: 'tracking',
+        textAnimationStyle: 'bold-reveal',
+        endCardCTAStyle: 'bold',
+      };
+    case 'product-deep-dive':
+      return {
+        ...base,
+        lengthSec: 60,
+        lengthPreset: 60,
+        aspectRatio: '16:9',
+        pace: 'slow-build',
+        motionIntensity: 'medium',
+        moodTone: 'premium',
+        cameraStyle: 'cinematic-pan',
+        textAnimationStyle: 'kinetic',
+        endCardCTAStyle: 'branded-slate',
+        brandIntensity: 'full-lockup',
+      };
+    case 'custom':
+    default:
+      return base;
+  }
+}
+
+export const FONT_FAMILY_OPTIONS = [
+  { value: 'Inter', label: 'Inter' },
+  { value: 'system-ui, sans-serif', label: 'System Sans' },
+  { value: 'Georgia, "Playfair Display", serif', label: 'Serif Premium' },
+  { value: '"JetBrains Mono", monospace', label: 'Mono Tech' },
+  { value: 'Poppins, sans-serif', label: 'Poppins' },
+] as const;
+
+export const LOGO_PLACEMENT_OPTIONS: Array<{ value: LogoPlacement; label: string }> = [
+  { value: 'top-left', label: 'Top-left corner' },
+  { value: 'bottom-right', label: 'Bottom-right watermark' },
+  { value: 'hero', label: 'Hero integration' },
+  { value: 'end-card-only', label: 'End-card only' },
+  { value: 'watermark', label: 'Floating subtle' },
+  { value: 'centered', label: 'Centered lockup' },
+];
 
 // ── Defaults ──
 
@@ -239,6 +490,12 @@ export const DEFAULT_VIDEO_CONTROLS: VideoControls = {
   extendStitchParams: {},
   lipSyncStrength: 0,
   heroFrameFirst: false,
+  videoStyle: 'explainer',
+  brandPalette: deriveBrandPaletteFromAccent('#6366f1'),
+  fontFamily: 'Inter',
+  logoPlacement: 'bottom-right',
+  accentLock: true,
+  logoLock: false,
 };
 
 // ── Canvas dimensions ──
@@ -349,8 +606,21 @@ export function parseMotionVector(vector: string | MotionBrushVector): MotionBru
 
 // ── Prompt injection ──
 
+function formatBrandPaletteForPrompt(palette: BrandPalette): string {
+  const parts = [
+    `PRIMARY ${palette.primary}`,
+    `ACCENT ${palette.accent}`,
+    palette.secondary ? `SECONDARY ${palette.secondary}` : '',
+    palette.neutral ? `NEUTRAL ${palette.neutral}` : '',
+    palette.surface ? `SURFACE ${palette.surface}` : '',
+    palette.text ? `TEXT ${palette.text}` : '',
+  ].filter(Boolean);
+  return parts.join(', ');
+}
+
 export function injectControlsToPrompt(basePrompt: string, controls: VideoControls): string {
   const dims = getCanvasDimensions(controls.aspectRatio, controls.customAspect);
+  const palette = controls.brandPalette ?? deriveBrandPaletteFromAccent('#6366f1');
   const brushDesc =
     controls.motionBrush.areas.length > 0
       ? controls.motionBrush.areas
@@ -359,10 +629,15 @@ export function injectControlsToPrompt(basePrompt: string, controls: VideoContro
       : 'none';
 
   const sections = [
+    `VIDEO STYLE: ${controls.videoStyle}`,
     `LENGTH: ${controls.lengthSec}s (${controls.lengthPreset})`,
     `ASPECT: ${controls.aspectRatio} (${dims.width}x${dims.height})`,
     `CAMERA: ${controls.cameraStyle} | MOTION: ${controls.motionIntensity}`,
     `MOOD: ${controls.moodTone} | PACE: ${controls.pace}`,
+    `BRAND PALETTE: ${formatBrandPaletteForPrompt(palette)}`,
+    `FONT: ${controls.fontFamily ?? 'Inter'}`,
+    `LOGO PLACEMENT: ${controls.logoPlacement ?? 'bottom-right'}${controls.logoLock ? ' (locked)' : ''}`,
+    `ACCENT LOCK: ${controls.accentLock ? 'true' : 'false'}`,
     `BRAND: ${controls.brandIntensity} @ ${controls.refConsistencyStrength}% ref strength`,
     `TEXT: ${controls.textAnimationStyle} | END CARD: ${controls.endCardCTAStyle}`,
     `MUSIC SYNC: ${controls.musicSyncLevel}${controls.musicSync?.bpm ? ` @ ${controls.musicSync.bpm} BPM` : ''}`,
@@ -432,6 +707,12 @@ export function mapToRenderer(controls: VideoControls, fps = 60): RendererContro
     endCardStyle: controls.endCardCTAStyle,
     musicSyncLevel: controls.musicSyncLevel,
     beatIntervalMs,
+    videoStyle: controls.videoStyle,
+    brandPalette: controls.brandPalette ?? deriveBrandPaletteFromAccent('#6366f1'),
+    fontFamily: controls.fontFamily ?? 'Inter',
+    logoPlacement: controls.logoPlacement ?? 'bottom-right',
+    accentLock: controls.accentLock ?? true,
+    logoLock: controls.logoLock ?? false,
   };
 }
 
@@ -488,6 +769,12 @@ const PREMIUM_PRESETS: Record<string, PremiumPresetBundle> = {
       physicsIntensity: 'medium',
       lensOptics: '50mm prime f/2 shallow DOF',
       heroFrameFirst: true,
+      videoStyle: 'explainer',
+      brandPalette: SAMPLE_PALETTES.stratabody,
+      fontFamily: 'Inter',
+      logoPlacement: 'hero',
+      accentLock: true,
+      logoLock: true,
     },
   },
 
@@ -496,7 +783,7 @@ const PREMIUM_PRESETS: Record<string, PremiumPresetBundle> = {
     label: 'Runway Motion Brush + Director',
     feel: 'Paint motion areas, director camera, physics interactions',
     projectHint: 'ClubCensus',
-    goal: '15s vertical social: live poll bars racing with brush motion, avatars, Engage live CTA. Replicate Runway polished motion control.',
+    goal: '15s vertical social: member metrics rising with brush motion, event cards, gold-accent CTA on deep green UI. Professional club-management tone.',
     controls: {
       ...DEFAULT_VIDEO_CONTROLS,
       lengthSec: 15,
@@ -504,7 +791,7 @@ const PREMIUM_PRESETS: Record<string, PremiumPresetBundle> = {
       aspectRatio: '9:16',
       cameraStyle: 'dynamic',
       motionIntensity: 'high-energy',
-      moodTone: 'energetic',
+      moodTone: 'professional',
       pace: 'fast-paced',
       brandIntensity: 'strong-branding',
       refConsistencyStrength: 85,
@@ -513,17 +800,23 @@ const PREMIUM_PRESETS: Record<string, PremiumPresetBundle> = {
       endCardCTAStyle: 'bold',
       motionBrush: {
         areas: [
-          { id: 'bars', desc: 'poll bars', mask: { x: 0.55, y: 0.35, w: 0.35, h: 0.4 }, vector: 'upward fill fast', intensity: 0.9 },
-          { id: 'avatars', desc: 'avatars pop', mask: { x: 0.1, y: 0.2, w: 0.3, h: 0.25 }, vector: 'scale in', intensity: 0.7 },
+          { id: 'metrics', desc: 'member metrics', mask: { x: 0.55, y: 0.35, w: 0.35, h: 0.4 }, vector: 'upward fill fast', intensity: 0.9 },
+          { id: 'events', desc: 'event cards', mask: { x: 0.1, y: 0.2, w: 0.3, h: 0.25 }, vector: 'scale in', intensity: 0.7 },
         ],
       },
       firstLastFrameRefs: { start: '__generate_start__', end: '__generate_end__' },
       directorModeEnabled: true,
-      directorModePlainLang: 'Energetic community poll reveal with brush on bars/avatars, tracking camera, physics on interactions',
+      directorModePlainLang: 'Professional club dashboard reveal with brush on member metrics/event cards, tracking camera, gold accents on deep green UI',
       variantCount: 4,
       variantStrategy: 'best-critic',
       physicsIntensity: 'high',
       extendStitchParams: { stitchTransitions: true, extendFromLastSec: 2 },
+      videoStyle: 'vertical-social',
+      brandPalette: SAMPLE_PALETTES.clubcensus,
+      fontFamily: 'Inter',
+      logoPlacement: 'bottom-right',
+      accentLock: true,
+      logoLock: false,
     },
   },
 
@@ -563,6 +856,12 @@ const PREMIUM_PRESETS: Record<string, PremiumPresetBundle> = {
       physicsIntensity: 'high',
       lensOptics: 'anamorphic',
       lipSyncStrength: 70,
+      videoStyle: 'testimonial',
+      brandPalette: SAMPLE_PALETTES.speedmend,
+      fontFamily: 'Inter',
+      logoPlacement: 'end-card-only',
+      accentLock: true,
+      logoLock: true,
     },
   },
 
@@ -610,6 +909,12 @@ const PREMIUM_PRESETS: Record<string, PremiumPresetBundle> = {
       extendStitchParams: {
         insertEdit: { object: 'new progress ring highlight', timeSec: 4 },
       },
+      videoStyle: 'promo-hook',
+      brandPalette: SAMPLE_PALETTES.stratabody,
+      fontFamily: 'Inter',
+      logoPlacement: 'watermark',
+      accentLock: true,
+      logoLock: false,
     },
   },
 
@@ -626,7 +931,7 @@ const PREMIUM_PRESETS: Record<string, PremiumPresetBundle> = {
       aspectRatio: '9:16',
       cameraStyle: 'tracking',
       motionIntensity: 'high-energy',
-      moodTone: 'futuristic',
+      moodTone: 'professional',
       pace: 'fast-paced',
       brandIntensity: 'strong-branding',
       refConsistencyStrength: 82,
@@ -636,13 +941,13 @@ const PREMIUM_PRESETS: Record<string, PremiumPresetBundle> = {
       endCardCTAStyle: 'bold',
       motionBrush: {
         areas: [
-          { id: 'poll', desc: 'poll bars', mask: { x: 0.5, y: 0.4, w: 0.4, h: 0.35 }, vector: 'upward fill fast', intensity: 0.95 },
-          { id: 'feed', desc: 'feed cards', mask: { x: 0.08, y: 0.55, w: 0.45, h: 0.3 }, vector: 'scale in', intensity: 0.75 },
+          { id: 'metrics', desc: 'member metrics', mask: { x: 0.5, y: 0.4, w: 0.4, h: 0.35 }, vector: 'upward fill fast', intensity: 0.95 },
+          { id: 'cards', desc: 'event cards', mask: { x: 0.08, y: 0.55, w: 0.45, h: 0.3 }, vector: 'scale in', intensity: 0.75 },
         ],
       },
       firstLastFrameRefs: { start: '__generate_start__', end: '__generate_end__' },
       directorModeEnabled: true,
-      directorModePlainLang: '5s futuristic community pulse: poll bars surge, feed cards pop, high-energy tracking camera',
+      directorModePlainLang: '5s professional club-management pulse: member metrics rise, event cards pop, gold accents on deep green UI',
       variantCount: 3,
       variantStrategy: 'best-critic',
       nodeGraph: {
@@ -666,8 +971,148 @@ const PREMIUM_PRESETS: Record<string, PremiumPresetBundle> = {
       },
       brandKitLock: { enabled: true, kitName: 'ClubCensus Brand Kit', lockStrength: 85 },
       physicsIntensity: 'high',
-      lensOptics: '24mm wide neon rim light',
+      lensOptics: '50mm clean studio key with warm gold rim',
       extendStitchParams: { stitchTransitions: true },
+      heroFrameFirst: true,
+      videoStyle: 'promo-hook',
+      brandPalette: SAMPLE_PALETTES.clubcensus,
+      fontFamily: 'Inter',
+      logoPlacement: 'top-left',
+      accentLock: true,
+      logoLock: true,
+    },
+  },
+
+  'stratabody-explainer': {
+    id: 'stratabody-explainer',
+    label: 'StrataBody Explainer',
+    feel: '30s indigo explainer — rings hero, metrics, branded CTA',
+    projectHint: 'StrataBody',
+    goal: '30s StrataBody explainer: kinetic hook, dashboard rings fill, metrics proof, full brand CTA slate.',
+    controls: {
+      ...DEFAULT_VIDEO_CONTROLS,
+      lengthSec: 30,
+      lengthPreset: 30,
+      aspectRatio: '16:9',
+      videoStyle: 'explainer',
+      cameraStyle: 'orbiting',
+      moodTone: 'premium',
+      pace: 'balanced',
+      brandIntensity: 'full-lockup',
+      refConsistencyStrength: 90,
+      textAnimationStyle: 'kinetic',
+      endCardCTAStyle: 'branded-slate',
+      brandPalette: SAMPLE_PALETTES.stratabody,
+      fontFamily: 'Inter',
+      logoPlacement: 'hero',
+      accentLock: true,
+      logoLock: true,
+      heroFrameFirst: true,
+    },
+  },
+
+  'clubcensus-promo': {
+    id: 'clubcensus-promo',
+    label: 'ClubCensus Promo',
+    feel: '10–15s vertical promo — deep green UI, gold accents, member metrics, bold CTA',
+    projectHint: 'ClubCensus',
+    goal: '12s vertical ClubCensus promo: member dashboard metrics, event highlights, gold-accent CTA with bold reveal — trusted professional club tone.',
+    controls: {
+      ...DEFAULT_VIDEO_CONTROLS,
+      lengthSec: 12,
+      lengthPreset: 'custom',
+      aspectRatio: '9:16',
+      videoStyle: 'promo-hook',
+      cameraStyle: 'dynamic',
+      motionIntensity: 'high-energy',
+      moodTone: 'professional',
+      pace: 'fast-paced',
+      brandIntensity: 'strong-branding',
+      textAnimationStyle: 'bold-reveal',
+      endCardCTAStyle: 'bold',
+      brandPalette: SAMPLE_PALETTES.clubcensus,
+      fontFamily: 'Inter',
+      logoPlacement: 'bottom-right',
+      accentLock: true,
+      logoLock: false,
+    },
+  },
+
+  'speedmend-testimonial': {
+    id: 'speedmend-testimonial',
+    label: 'SpeedMend Testimonial',
+    feel: '30–45s quote-led B2B proof — kanban, timeline, warm close',
+    projectHint: 'SpeedMend',
+    goal: '40s SpeedMend testimonial: quote hook, kanban workflow, handoff timeline, metrics proof, brand CTA.',
+    controls: {
+      ...DEFAULT_VIDEO_CONTROLS,
+      lengthSec: 40,
+      lengthPreset: 'custom',
+      aspectRatio: '16:9',
+      videoStyle: 'testimonial',
+      cameraStyle: 'cinematic-pan',
+      moodTone: 'warm',
+      pace: 'balanced',
+      brandIntensity: 'full-lockup',
+      refConsistencyStrength: 90,
+      textAnimationStyle: 'simple-fade',
+      endCardCTAStyle: 'standard',
+      brandPalette: SAMPLE_PALETTES.speedmend,
+      fontFamily: 'Inter',
+      logoPlacement: 'end-card-only',
+      accentLock: true,
+      logoLock: true,
+    },
+  },
+
+  'vertical-social-hook': {
+    id: 'vertical-social-hook',
+    label: 'Vertical Social Hook',
+    feel: '5–8s 9:16 hook — fast text, minimal end card',
+    goal: '6s vertical social hook: punchy kinetic text, product flash, minimal CTA for Reels/TikTok.',
+    controls: {
+      ...DEFAULT_VIDEO_CONTROLS,
+      lengthSec: 6,
+      lengthPreset: 'custom',
+      aspectRatio: '9:16',
+      videoStyle: 'vertical-social',
+      cameraStyle: 'tracking',
+      motionIntensity: 'high-energy',
+      moodTone: 'professional',
+      pace: 'fast-paced',
+      textAnimationStyle: 'bold-reveal',
+      endCardCTAStyle: 'minimal',
+      brandPalette: SAMPLE_PALETTES.clubcensus,
+      fontFamily: 'Inter',
+      logoPlacement: 'watermark',
+      accentLock: true,
+      logoLock: false,
+    },
+  },
+
+  'product-deep-dive': {
+    id: 'product-deep-dive',
+    label: 'Product Deep Dive',
+    feel: '60s cinematic — multi-feature beats, rich camera',
+    goal: '60s product deep dive: slow-build cinematic reveal, multiple feature cards, detailed UI interactions, strong brand close.',
+    controls: {
+      ...DEFAULT_VIDEO_CONTROLS,
+      lengthSec: 60,
+      lengthPreset: 60,
+      aspectRatio: '16:9',
+      videoStyle: 'product-deep-dive',
+      cameraStyle: 'dolly',
+      moodTone: 'premium',
+      pace: 'slow-build',
+      brandIntensity: 'full-lockup',
+      refConsistencyStrength: 92,
+      textAnimationStyle: 'kinetic',
+      endCardCTAStyle: 'branded-slate',
+      brandPalette: SAMPLE_PALETTES.stratabody,
+      fontFamily: 'Georgia, "Playfair Display", serif',
+      logoPlacement: 'centered',
+      accentLock: true,
+      logoLock: true,
       heroFrameFirst: true,
     },
   },
@@ -706,5 +1151,10 @@ export function mergeControls(partial: Partial<VideoControls>): VideoControls {
     brandKitLock: { ...DEFAULT_VIDEO_CONTROLS.brandKitLock, ...partial.brandKitLock },
     extendStitchParams: { ...DEFAULT_VIDEO_CONTROLS.extendStitchParams, ...partial.extendStitchParams },
     musicSync: partial.musicSync ? { ...DEFAULT_VIDEO_CONTROLS.musicSync, ...partial.musicSync } : DEFAULT_VIDEO_CONTROLS.musicSync,
+    brandPalette: partial.brandPalette
+      ? { ...DEFAULT_VIDEO_CONTROLS.brandPalette, ...partial.brandPalette }
+      : partial.brandPalette === undefined
+        ? DEFAULT_VIDEO_CONTROLS.brandPalette
+        : partial.brandPalette,
   };
 }
