@@ -756,13 +756,18 @@ function drawKeyframePanel(
   const alpha = easeOutCubic(Math.min(1, progress * 2)) * easeOutCubic(Math.min(1, (1 - progress) * 2 + 0.5));
   ctx.globalAlpha = Math.min(1, alpha * (0.7 + ctx2.refStrength * 0.3));
 
-  drawGradientBg(ctx, w, h, colors, ctx2.controls.moodTone);
-  applyMoodOverlay(ctx, w, h, ctx2.controls.moodTone, colors, 0.2);
+  const pad = Math.round(w * 0.03);
+  const panelX = Math.round(w * 0.36);
+  const panelY = Math.round(h * 0.1);
+  const panelW = w - panelX - pad;
+  const panelH = h - panelY - pad - 56;
+  const baseScale = Math.min(panelW / img.naturalWidth, panelH / img.naturalHeight);
 
-  const pad = Math.round(w * 0.04);
-  const areaW = w - pad * 2;
-  const areaH = h - pad * 2 - 60;
-  const baseScale = Math.min(areaW / img.naturalWidth, areaH / img.naturalHeight);
+  applyMoodOverlay(ctx, w, h, ctx2.controls.moodTone, colors, 0.12);
+  ctx.fillStyle = colors.surface + '44';
+  ctx.beginPath();
+  ctx.roundRect(panelX - 8, panelY - 8, panelW + 16, panelH + 16, 14);
+  ctx.fill();
 
   let { zoom, panX, panY, rotation } = resolveCameraMotion(motion, progress, ctx2.rendererParams.motionScale);
 
@@ -786,12 +791,14 @@ function drawKeyframePanel(
 
   const dw = img.naturalWidth * baseScale * zoom;
   const dh = img.naturalHeight * baseScale * zoom;
-  const dx = (w - dw) / 2 + panX;
-  const dy = (h - dh) / 2 - 16 + panY;
+  const dx = panelX + (panelW - dw) / 2 + panX;
+  const dy = panelY + (panelH - dh) / 2 + panY;
 
-  ctx.translate(w / 2, h / 2);
+  const pivotX = panelX + panelW / 2;
+  const pivotY = panelY + panelH / 2;
+  ctx.translate(pivotX, pivotY);
   ctx.rotate(rotation);
-  ctx.translate(-w / 2, -h / 2);
+  ctx.translate(-pivotX, -pivotY);
 
   ctx.shadowColor = 'rgba(0,0,0,0.5)';
   ctx.shadowBlur = 40;
@@ -976,7 +983,11 @@ function drawScene(
           anchor,
           anchor === 'interp' ? anchorProgress : undefined,
         );
-        return;
+      } else {
+        drawDashboardCard(
+          ctx, w * 0.36, h * 0.12, w * 0.55, h * 0.68,
+          colors, progress, `Keyframe ${idx + 1}`, alpha, renderCtx.physicsWeight, font,
+        );
       }
       break;
     }
@@ -992,17 +1003,20 @@ function weaveKeyframeScenes(
   controls?: VideoControls,
   hasFirstLast = false,
 ): Scene[] {
-  if (keyframeCount <= 0 && !hasFirstLast) return base;
+  if (keyframeCount <= 0 && !hasFirstLast) return ensureFullTimeline(base, durationMs);
 
-  const scenes = [...base];
+  const scenes = base.filter((s) => s.type !== 'keyframe');
   const slotCount = Math.max(keyframeCount, hasFirstLast ? 2 : 0);
   const effectiveSlots = Math.min(Math.max(slotCount, 1), 5);
-  const interval = durationMs / (effectiveSlots + 1);
+  const segmentMs = durationMs / (effectiveSlots + 1);
+  const keyframeDur = Math.min(3800, Math.max(1800, Math.round(segmentMs * 0.42)));
   const cameraMotion = controls ? mapToRenderer(controls).cameraMotion : 'zoom-in';
+  const motionScale = controls ? mapToRenderer(controls).motionScale : 1;
 
   for (let i = 0; i < effectiveSlots; i++) {
-    const start = Math.round(interval * (i + 0.5) - Math.min(2200, durationMs * 0.15));
-    const end = start + Math.min(4400, Math.round(durationMs * 0.35));
+    const center = Math.round(segmentMs * (i + 1));
+    const start = Math.max(0, center - Math.round(keyframeDur / 2));
+    const end = Math.min(durationMs, start + keyframeDur);
     let anchor: 'start' | 'end' | 'interp' | undefined;
     if (hasFirstLast) {
       if (i === 0) anchor = 'start';
@@ -1010,44 +1024,73 @@ function weaveKeyframeScenes(
       else anchor = 'interp';
     }
 
+    const motion = controls?.cameraStyle === 'orbiting'
+      ? 'parallax'
+      : MOTION_CYCLE[i % MOTION_CYCLE.length] ?? cameraMotion;
+
     scenes.push({
-      start: Math.max(0, start),
-      end: Math.min(durationMs, end),
+      start,
+      end,
       type: 'keyframe',
       params: {
         index: Math.min(i, Math.max(0, keyframeCount - 1)),
-        motion: controls?.cameraStyle === 'orbiting' ? 'parallax' : MOTION_CYCLE[i % MOTION_CYCLE.length] ?? cameraMotion,
+        motion,
         anchor,
         anchorProgress: anchor === 'interp' ? i / Math.max(1, effectiveSlots - 1) : undefined,
       },
       cameraPath: controls
-        ? { style: controls.cameraStyle, motion: cameraMotion, intensity: mapToRenderer(controls).motionScale }
+        ? { style: controls.cameraStyle, motion, intensity: motionScale }
         : undefined,
+      moodTone: controls?.moodTone,
+      textVariant: controls?.textAnimationStyle,
+      endCardVariant: controls?.endCardCTAStyle,
     });
   }
 
-  return scenes.sort((a, b) => a.start - b.start);
+  return ensureFullTimeline(scenes.sort((a, b) => a.start - b.start), durationMs);
 }
 
-function applyControlsToScenes(scenes: Scene[], controls: VideoControls, durationMs: number): Scene[] {
+function applyControlsToScenes(
+  scenes: Scene[],
+  controls: VideoControls,
+  durationMs: number,
+  proportional = false,
+): Scene[] {
   const scaled = scaleTimingsForLength(
     scenes as unknown as ScaledSceneTiming[],
     controls.lengthSec,
     controls.pace,
+    { proportional },
   ) as unknown as Scene[];
 
-  return scaled.map((s) => ({
-    ...s,
-    end: Math.min(s.end, durationMs),
-    moodTone: controls.moodTone,
-    textVariant: controls.textAnimationStyle,
-    endCardVariant: controls.endCardCTAStyle,
-    cameraPath: s.cameraPath ?? {
-      style: controls.cameraStyle,
-      motion: mapToRenderer(controls).cameraMotion,
-      intensity: mapToRenderer(controls).motionScale,
-    },
-  }));
+  return ensureFullTimeline(
+    scaled.map((s) => ({
+      ...s,
+      end: Math.min(s.end, durationMs),
+      moodTone: controls.moodTone,
+      textVariant: controls.textAnimationStyle,
+      endCardVariant: controls.endCardCTAStyle,
+      cameraPath: s.cameraPath ?? {
+        style: controls.cameraStyle,
+        motion: mapToRenderer(controls).cameraMotion,
+        intensity: mapToRenderer(controls).motionScale,
+      },
+    })),
+    durationMs,
+  );
+}
+
+/** Guarantee bg spans full duration and timeline reaches the end. */
+function ensureFullTimeline(scenes: Scene[], durationMs: number): Scene[] {
+  const result = scenes.map((s) => ({ ...s }));
+  const bg = result.find((s) => s.type === 'bg');
+  if (bg) {
+    bg.start = 0;
+    bg.end = durationMs;
+  } else {
+    result.unshift({ start: 0, end: durationMs, type: 'bg' });
+  }
+  return result;
 }
 
 function finalizeScenesWithEndCard(scenes: Scene[], duration: number, endCardStyle: EndCardCTAStyle): Scene[] {
@@ -1153,7 +1196,7 @@ function getScenesForVideoStyle(
   }
 
   scenes = finalizeScenesWithEndCard(scenes, d, endCardStyle);
-  return applyControlsToScenes(scenes, controls, d);
+  return applyControlsToScenes(scenes, controls, d, true);
 }
 
 function getTemplateScenes(id: TemplateId, brand: ProjectBrand, controls?: VideoControls): Scene[] {
@@ -1226,11 +1269,28 @@ function getTemplateScenes(id: TemplateId, brand: ProjectBrand, controls?: Video
   return scenes;
 }
 
+/** Build the full scene timeline (base + keyframe weave) for tests and diagnostics. */
+export function buildRenderScenes(
+  templateId: TemplateId | undefined,
+  goal: string,
+  brand: ProjectBrand,
+  controls: VideoControls,
+  keyframeCount = 0,
+): Scene[] {
+  const durationMs = resolveLengthMs(controls);
+  const base = getScenesForTemplateOrGoal(templateId, goal, brand, 0, controls);
+  const hasFirstLast = !!(
+    controls.firstLastFrameRefs.start ||
+    controls.firstLastFrameRefs.end
+  );
+  return weaveKeyframeScenes(base, keyframeCount, durationMs, controls, hasFirstLast);
+}
+
 export function getScenesForTemplateOrGoal(
   templateId: TemplateId | undefined,
   goal: string,
   brand: ProjectBrand,
-  keyframeCount = 0,
+  _keyframeCount = 0,
   controls?: VideoControls,
 ): Scene[] {
   const duration = controls
@@ -1264,12 +1324,7 @@ export function getScenesForTemplateOrGoal(
     }
   }
 
-  const hasFirstLast = !!(
-    controls?.firstLastFrameRefs.start ||
-    controls?.firstLastFrameRefs.end
-  );
-
-  return weaveKeyframeScenes(base, keyframeCount, duration, controls, hasFirstLast);
+  return base;
 }
 
 export function createHyperframesRenderer(
@@ -1327,34 +1382,50 @@ export function createHyperframesRenderer(
 
   const hasFirstLast = !!(fl?.start || fl?.end);
 
-  let currentScenes: Scene[] = Array.isArray(scenesOrTemplate)
-    ? weaveKeyframeScenes(scenesOrTemplate, keyframeImgs.length, durationMs, opts.controls, hasFirstLast)
-    : getScenesForTemplateOrGoal(scenesOrTemplate, '', brand, keyframeImgs.length, opts.controls);
+  const baseScenes: Scene[] = Array.isArray(scenesOrTemplate)
+    ? scenesOrTemplate
+    : getScenesForTemplateOrGoal(scenesOrTemplate, '', brand, 0, opts.controls);
+
+  let currentScenes = weaveKeyframeScenes(
+    baseScenes,
+    keyframeImgs.length,
+    durationMs,
+    opts.controls,
+    hasFirstLast,
+  );
 
   function draw(elapsed: number) {
     const colors = resolveBrandDrawColors(brand);
     const font = brand.fontFamily;
     const brandWeight = brandAccentWeight(renderCtx.controls.brandIntensity);
+    const chromeProgress = easeOutCubic(Math.min(1, elapsed / 900));
 
     ctx.clearRect(0, 0, width, height);
     drawGradientBg(ctx, width, height, colors, renderCtx.controls.moodTone);
 
-    const activeKeyframe = currentScenes.find(
-      (s) => s.type === 'keyframe' && elapsed >= s.start && elapsed <= s.end,
+    const activeSidebar = currentScenes.find(
+      (s) => s.type === 'sidebar' && elapsed >= s.start && elapsed <= s.end,
     );
+    const sidebarProgress = activeSidebar
+      ? sceneProgress(activeSidebar, elapsed, renderCtx.physicsWeight)
+      : chromeProgress;
+    drawSidebar(ctx, height, colors, brand.name, sidebarProgress, brandWeight, font);
+    drawTopbar(ctx, width, brand.name, chromeProgress, colors, font);
 
-    if (activeKeyframe) {
-      drawScene(ctx, activeKeyframe, brand, elapsed, width, height, keyframeImgs, firstLastImgs, renderCtx);
-    } else {
-      drawSidebar(ctx, height, colors, brand.name, 1, brandWeight, font);
-      drawTopbar(ctx, width, brand.name, 1, colors, font);
-    }
+    const motionScenes = currentScenes.filter(
+      (s) => s.type !== 'bg' && s.type !== 'keyframe',
+    );
+    const keyframeScenes = currentScenes.filter((s) => s.type === 'keyframe');
 
-    for (const scene of currentScenes) {
-      if (scene.type === 'keyframe' || scene.type === 'bg') continue;
+    for (const scene of motionScenes) {
       if (scene.type === 'logo' && shouldDrawPersistentLogo(renderCtx.controls, elapsed, durationMs)) continue;
       if (elapsed >= scene.start && elapsed <= scene.end) {
-        if (activeKeyframe && (scene.type === 'sidebar' || scene.type === 'topbar')) continue;
+        drawScene(ctx, scene, brand, elapsed, width, height, keyframeImgs, firstLastImgs, renderCtx);
+      }
+    }
+
+    for (const scene of keyframeScenes) {
+      if (elapsed >= scene.start && elapsed <= scene.end) {
         drawScene(ctx, scene, brand, elapsed, width, height, keyframeImgs, firstLastImgs, renderCtx);
       }
     }
@@ -1404,23 +1475,45 @@ export function createHyperframesRenderer(
   }
 
   async function record(recordDurationMs = durationMs): Promise<Blob> {
-    const stream = canvas.captureStream(fps);
+    const recordFps = fps;
+    const stream = canvas.captureStream(recordFps);
     const mime = MediaRecorder.isTypeSupported('video/webm;codecs=vp9')
       ? 'video/webm;codecs=vp9'
       : 'video/webm';
-    const recorder = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: 8_000_000 });
+    const recorder = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: 12_000_000 });
     const chunks: Blob[] = [];
 
     return new Promise((resolve) => {
       recorder.ondataavailable = (e) => { if (e.data.size) chunks.push(e.data); };
       recorder.onstop = () => {
         const blob = new Blob(chunks, { type: 'video/webm' });
-        stop();
         resolve(blob);
       };
-      recorder.start(100);
-      start();
-      setTimeout(() => recorder.stop(), recordDurationMs);
+
+      stop();
+      isRunning = false;
+      if (animationFrame) cancelAnimationFrame(animationFrame);
+
+      recorder.start(Math.max(100, Math.round(1000 / recordFps)));
+      const recordStart = performance.now();
+      const frameMs = 1000 / recordFps;
+
+      const pumpFrame = () => {
+        const elapsed = performance.now() - recordStart;
+        if (elapsed >= recordDurationMs) {
+          draw(recordDurationMs);
+          const track = stream.getVideoTracks()[0] as MediaStreamTrack & { requestFrame?: () => void };
+          track.requestFrame?.();
+          recorder.stop();
+          return;
+        }
+        draw(elapsed);
+        const track = stream.getVideoTracks()[0] as MediaStreamTrack & { requestFrame?: () => void };
+        track.requestFrame?.();
+        setTimeout(pumpFrame, frameMs);
+      };
+
+      pumpFrame();
     });
   }
 
@@ -1546,7 +1639,7 @@ export async function postProcessWithFFmpeg(
       cmd.push('-an');
     }
 
-    cmd.push('-movflags', '+faststart', outputName);
+    cmd.push('-t', durationSec.toFixed(3), '-movflags', '+faststart', outputName);
 
     const exitCode = await ffmpeg.exec(cmd);
     if (exitCode !== 0) {

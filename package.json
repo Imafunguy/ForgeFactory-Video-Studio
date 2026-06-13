@@ -8,7 +8,8 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "test:premium": "npx tsx scripts/run-premium-tests.ts"
+    "test:premium": "npx tsx scripts/run-premium-tests.ts",
+    "test:timeline": "npx tsx scripts/validate-timeline.ts"
   },
   "dependencies": {
     "@ffmpeg/ffmpeg": "^0.12.15",

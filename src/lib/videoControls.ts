@@ -551,42 +551,45 @@ export interface ScaledSceneTiming {
   [key: string]: unknown;
 }
 
+export interface ScaleTimingsOptions {
+  /** Scenes already use 0–durationMs fractions — only clamp, do not rescale */
+  proportional?: boolean;
+  /** Baseline duration (seconds) for absolute-ms template scenes */
+  baselineSec?: number;
+}
+
 export function scaleTimingsForLength(
   scenes: ScaledSceneTiming[],
   lengthSec: number,
   pace: Pace = 'balanced',
+  options?: ScaleTimingsOptions,
 ): ScaledSceneTiming[] {
   const durationMs = lengthSec * 1000;
-  const baselineSec = 30;
-  let factor = lengthSec / baselineSec;
 
-  if (lengthSec <= 10) {
-    const paceBoost = pace === 'fast-paced' ? 0.85 : pace === 'slow-build' ? 1.15 : 1;
-    factor *= (lengthSec / 10) * paceBoost;
+  if (options?.proportional) {
+    return scenes
+      .filter((s) => s.end > s.start && s.start < durationMs)
+      .map((s) => ({
+        ...s,
+        end: Math.min(s.end as number, durationMs),
+      }));
   }
 
-  const scaled = scenes.map((s) => ({
-    ...s,
-    start: Math.round(s.start * factor),
-    end: Math.round(s.end * factor),
-  }));
+  const baselineSec = options?.baselineSec ?? 30;
+  const paceFactor = pace === 'fast-paced' ? 0.94 : pace === 'slow-build' ? 1.06 : 1;
+  const factor = (lengthSec / baselineSec) * paceFactor;
 
-  if (lengthSec <= 10) {
-    const essential = scaled.filter(
-      (s) =>
-        s.end > s.start &&
-        s.start < durationMs &&
-        ['bg', 'kinetic', 'bars', 'metric', 'cta', 'logo', 'keyframe', 'progress', 'card'].includes(
-          String(s.type),
-        ),
-    );
-    return essential.map((s) => ({
+  return scenes
+    .map((s) => ({
+      ...s,
+      start: Math.round(s.start * factor),
+      end: Math.round(s.end * factor),
+    }))
+    .filter((s) => s.end > s.start && s.start < durationMs)
+    .map((s) => ({
       ...s,
       end: Math.min(s.end as number, durationMs),
     }));
-  }
-
-  return scaled.filter((s) => s.end > s.start && s.start < durationMs);
 }
 
 // ── Motion brush vector parsing ──
