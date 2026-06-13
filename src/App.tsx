@@ -20,7 +20,6 @@ import {
   resolveVoiceModelId,
   extractNarrationFromScript,
   getLocalRenderBias,
-  generatePlanWithQualityGate,
   generateVariants,
   runPreRenderQualityGate,
 } from './lib/openrouter';
@@ -42,18 +41,23 @@ import {
 import {
   buildPlanningPrompt,
   buildBrandContext,
+  buildRefinementPrompt,
   extractHyperframesDesc,
   extractKeyframeSection,
   getBrandVideoProfile,
   resolveEffectiveModels,
 } from './lib/videoPipelinePrompts';
 import {
+  runPremiumOrchestrator,
+  type WorkflowStageResult,
+} from './lib/premiumOrchestrator';
+import { buildComfyPayload } from './lib/comfyAdvancedBridge';
+import {
   type VideoControls,
   DEFAULT_VIDEO_CONTROLS,
   loadPremiumPreset,
   mergeControls,
   mapToRenderer,
-  serializePreset,
   injectControlsToPrompt,
 } from './lib/videoControls';
 import {
@@ -156,6 +160,8 @@ function App() {
   const [targetRes] = useState({ width: 1920, height: 1080, fps: 60 });
   const [videoControls, setVideoControls] = useState<VideoControls>(DEFAULT_VIDEO_CONTROLS);
   const [activePresetId, setActivePresetId] = useState<string | null>(null);
+  const [workflowStages, setWorkflowStages] = useState<WorkflowStageResult[]>([]);
+  const comfyNote = buildComfyPayload(videoControls, '', studioGoal || agenticGoal).exportNote;
 
   const currentProject = projects.find(p => p.id === currentProjectId) || projects[0];
 
@@ -247,6 +253,7 @@ function App() {
       const bundle = loadPremiumPreset(presetId);
       setVideoControls(bundle.controls);
       setStudioGoal(bundle.goal);
+      setAgenticGoal(bundle.goal);
       setActivePresetId(presetId);
       toast.success(`Loaded ${bundle.label} — ${bundle.controls.lengthSec}s ${bundle.controls.aspectRatio}`);
     } catch (err) {
@@ -279,6 +286,55 @@ function App() {
       maxTokens,
     );
   }, [currentProject, apiKey]);
+
+  const runOrchestratorPlanning = useCallback(async (goal: string) => {
+    if (!currentProject) throw new Error('No project selected');
+    const { planning: effectivePlanning } = getEffectiveModels();
+
+    const result = await runPremiumOrchestrator(
+      {
+        goal,
+        project: currentProject,
+        controls: videoControls,
+        maximizeLocal,
+        templateId: selectedTemplate,
+        presetId: activePresetId,
+      },
+      {
+        planningModel: effectivePlanning,
+        callPlanner: (prompt, model, maxTokens) => callModel(prompt, model, maxTokens),
+        callImagePrompts: (script) =>
+          generateImagePrompts(script, apiKey, getEffectiveModels().image, currentProject, videoControls),
+        generateVariants: videoControls.variantCount > 1
+          ? (basePlan) =>
+              generateVariants(
+                basePlan,
+                currentProject,
+                videoControls,
+                effectivePlanning,
+                apiKey,
+                (prompt, model) => callModel(prompt, model, 3200),
+              )
+          : undefined,
+        refinePlan: apiKey?.trim()
+          ? (plan, issues) =>
+              callModel(buildRefinementPrompt(currentProject, plan, issues, videoControls), effectivePlanning, 3200)
+          : undefined,
+      },
+    );
+
+    setWorkflowStages(result.stages);
+    return result;
+  }, [
+    currentProject,
+    videoControls,
+    maximizeLocal,
+    selectedTemplate,
+    activePresetId,
+    apiKey,
+    getEffectiveModels,
+    callModel,
+  ]);
 
   const setStudioStep = (stepId: string, status: StepStatus) => {
     setStudioStepStatuses(prev => ({ ...prev, [stepId]: status }));
@@ -606,49 +662,22 @@ function App() {
         if (stepId === 'planning') {
           const { planning: effectivePlanning } = getEffectiveModels();
           const planningMeta = getModelByValue(effectivePlanning);
-          const bias = getLocalRenderBias(maximizeLocal);
-          const durationSec = videoControls.lengthSec;
-          const initialPlan = await callModel(
-            buildPlanningPrompt(currentProject, goal, {
-              maximizeLocal,
-              templateId: selectedTemplate,
-              durationSec,
-              localBias: bias,
-              controls: videoControls,
-            }),
-            effectivePlanning,
-            3200,
-          );
-          const gated = await generatePlanWithQualityGate(
-            initialPlan,
-            currentProject,
-            effectivePlanning,
-            apiKey,
-            (prompt, model) => callModel(prompt, model, 3200),
-            videoControls,
-          );
-          script = gated.plan;
+          const orchestrated = await runOrchestratorPlanning(goal);
+          script = orchestrated.script;
+          imagePrompts = orchestrated.imagePrompts;
+          hyperDescLocal = orchestrated.hyperDesc;
 
-          let variantResults = undefined;
-          if (videoControls.variantCount > 1 && apiKey?.trim()) {
-            variantResults = await generateVariants(
-              script,
-              currentProject,
-              videoControls,
-              effectivePlanning,
-              apiKey,
-              (prompt, model) => callModel(prompt, model, 3200),
-            );
-            const selected = variantResults.find((v) => v.selected);
-            if (selected) script = selected.plan;
-            toast.info(`Generated ${variantResults.length} variants (${videoControls.variantStrategy})`);
+          if (orchestrated.variantResults.length > 1) {
+            toast.info(`Generated ${orchestrated.variantResults.length} variants (${videoControls.variantStrategy})`);
           }
-
-          if (gated.refined) {
-            toast.info(`Plan refined (quality score ${gated.qualityScore})`);
+          if (orchestrated.planRefined) {
+            toast.info(`Plan refined (quality score ${orchestrated.qualityScore})`);
           }
-          const gatesPassed = gated.premiumGates.filter((g) => g.pass).length;
-          toast.info(`Premium gates: ${gatesPassed}/${gated.premiumGates.length} passed`);
+          const gatesPassed = orchestrated.premiumGates.filter((g) => g.pass).length;
+          toast.info(`Premium gates: ${gatesPassed}/${orchestrated.premiumGates.length} passed`);
+          if (orchestrated.comfyPayload.enabled) {
+            toast.info(orchestrated.comfyPayload.exportNote);
+          }
           if (qualityBoost) {
             toast.info(`Quality Boost: planning via ${planningMeta?.label ?? effectivePlanning}`);
           }
@@ -656,21 +685,21 @@ function App() {
           setStudioOutput(prev => ({
             goal,
             script,
-            imagePrompts: prev?.imagePrompts ?? '',
-            hyperDesc: prev?.hyperDesc ?? '',
+            imagePrompts,
+            hyperDesc: hyperDescLocal,
             keyframes: prev?.keyframes ?? [],
             timestamp: prev?.timestamp ?? getTimestamp(),
             voiceAudioUrl: voiceAudioUrl ?? prev?.voiceAudioUrl,
             videoModel: selectedVideoModel,
             voiceModel: selectedVoiceModel,
-            controlsSnapshot: serializePreset(videoControls),
-            activePresetId: activePresetId ?? undefined,
-            qualityScore: gated.qualityScore,
-            planRefined: gated.refined,
-            premiumGates: gated.premiumGates,
-            variantResults,
+            controlsSnapshot: orchestrated.controlsSnapshot,
+            activePresetId: orchestrated.activePresetId,
+            qualityScore: orchestrated.qualityScore,
+            planRefined: orchestrated.planRefined,
+            premiumGates: orchestrated.premiumGates,
+            variantResults: orchestrated.variantResults,
             renderNote: maximizeLocal
-              ? 'Local render mode — cloud video skipped'
+              ? `Local render mode — ${orchestrated.comfyPayload.exportNote}`
               : `Cloud video will use ${getModelByValue(selectedVideoModel)?.label ?? selectedVideoModel}`,
           }));
         }
@@ -946,27 +975,14 @@ function App() {
     if (stepId === 'planning') {
       const { planning: effectivePlanning } = getEffectiveModels();
       const effectivePlanningMeta = getModelByValue(effectivePlanning);
-      const callId = makeCall('plan_script', effectivePlanning, effectivePlanningMeta?.label ?? 'Reasoning', effectivePlanningMeta?.costTier);
-      const bias = getLocalRenderBias(maximizeLocal);
-      const initialPlan = await callModel(
-        buildPlanningPrompt(currentProject!, goal, {
-          maximizeLocal,
-          templateId: selectedTemplate,
-          durationSec: Math.round(getTemplateDurationMs(selectedTemplate) / 1000),
-          localBias: bias,
-        }),
-        effectivePlanning,
-        3200,
-      );
-      const gated = await generatePlanWithQualityGate(
-        initialPlan,
-        currentProject!,
-        effectivePlanning,
-        apiKey,
-        (prompt, model) => callModel(prompt, model, 3200),
-      );
-      const plan = gated.plan;
-      updateAgenticToolCall(callId, { status: 'complete', message: 'Script & storyboard generated', endedAt: Date.now() });
+      const callId = makeCall('co_director', effectivePlanning, effectivePlanningMeta?.label ?? 'Reasoning', effectivePlanningMeta?.costTier);
+      const orchestrated = await runOrchestratorPlanning(goal);
+      const plan = orchestrated.script;
+      updateAgenticToolCall(callId, {
+        status: 'complete',
+        message: `Co-director workflow: ${orchestrated.stages.filter((s) => s.status === 'complete').length} stages · gates ${orchestrated.premiumGates.filter((g) => g.pass).length}/${orchestrated.premiumGates.length}`,
+        endedAt: Date.now(),
+      });
 
       const voiceMeta = getModelByValue(selectedVoiceModel);
       const voiceCallId = makeCall('generate_voice', selectedVoiceModel, voiceMeta?.label ?? 'Voice', voiceMeta?.costTier);
@@ -978,11 +994,33 @@ function App() {
       });
 
       const renderNote = maximizeLocal
-        ? 'Local render mode — cloud video skipped'
+        ? `Local render — ${orchestrated.comfyPayload.exportNote}`
         : `Cloud video will use ${getModelByValue(selectedVideoModel)?.label ?? selectedVideoModel}`;
 
-      setAgenticState(prev => ({ ...prev, script: plan, voiceAudioUrl: voiceAudioUrl ?? undefined, renderNote }));
-      return { ...state, script: plan, voiceAudioUrl: voiceAudioUrl ?? undefined, renderNote };
+      setAgenticState(prev => ({
+        ...prev,
+        script: plan,
+        imagePrompts: orchestrated.imagePrompts,
+        hyperDesc: orchestrated.hyperDesc,
+        voiceAudioUrl: voiceAudioUrl ?? undefined,
+        renderNote,
+        controlsSnapshot: orchestrated.controlsSnapshot,
+        activePresetId: orchestrated.activePresetId,
+        premiumGates: orchestrated.premiumGates,
+        variantResults: orchestrated.variantResults,
+      }));
+      return {
+        ...state,
+        script: plan,
+        imagePrompts: orchestrated.imagePrompts,
+        hyperDesc: orchestrated.hyperDesc,
+        voiceAudioUrl: voiceAudioUrl ?? undefined,
+        renderNote,
+        controlsSnapshot: orchestrated.controlsSnapshot,
+        activePresetId: orchestrated.activePresetId,
+        premiumGates: orchestrated.premiumGates,
+        variantResults: orchestrated.variantResults,
+      };
     }
 
     if (stepId === 'keyframes') {
@@ -998,7 +1036,7 @@ function App() {
         effectivePlanning,
       );
       const callId = makeCall('generate_keyframes', effectiveImage, effectiveImageMeta?.label ?? 'Image', effectiveImageMeta?.costTier);
-      const prompts = await generateImagePrompts(script, apiKey, effectiveImage, currentProject ?? undefined);
+      const prompts = await generateImagePrompts(script, apiKey, effectiveImage, currentProject ?? undefined, videoControls);
       let keyframes = parseKeyframes(prompts);
       if (keyframes.length < 3) keyframes = parseKeyframes(extractKeyframeSection(script));
       updateAgenticToolCall(callId, { status: 'active', message: `${keyframes.length} prompts — generating images…` });
@@ -1014,7 +1052,7 @@ function App() {
     }
 
     if (stepId === 'assembly') {
-      const hyperDescLocal = extractHyperframesDesc(state.script, currentProject!, selectedTemplate);
+      const hyperDescLocal = extractHyperframesDesc(state.script, currentProject!, selectedTemplate, videoControls);
       const callId = makeCall('hyperframes_build', 'local', 'Hyperframes (local)', undefined);
       const kfImages = state.keyframes.map(k => k.imageUrl).filter((u): u is string => !!u);
       generateHyperframesPreview(hyperDescLocal, 'agentic-preview-host', selectedTemplate, kfImages);
@@ -1265,6 +1303,7 @@ function App() {
             onControlsChange={handleControlsChange}
             onLoadPreset={handleLoadPreset}
             activePresetId={activePresetId}
+            workflowStages={workflowStages}
           />
         );
       case 'agentic':
@@ -1320,6 +1359,12 @@ function App() {
             onQualityPresetChange={handleQualityPresetChange}
             selectedTemplate={selectedTemplate}
             onTemplateChange={handleTemplateChange}
+            videoControls={videoControls}
+            onControlsChange={handleControlsChange}
+            onLoadPreset={handleLoadPreset}
+            activePresetId={activePresetId}
+            workflowStages={workflowStages}
+            comfyNote={comfyNote}
           />
         );
       case 'models':
@@ -1363,6 +1408,11 @@ function App() {
             onQualityPresetChange={handleQualityPresetChange}
             maximizeLocal={maximizeLocal}
             onMaximizeLocalChange={handleMaximizeLocalChange}
+            videoControls={videoControls}
+            onControlsChange={handleControlsChange}
+            onLoadPreset={handleLoadPreset}
+            activePresetId={activePresetId}
+            comfyNote={comfyNote}
           />
         );
       case 'library':

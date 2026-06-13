@@ -1,7 +1,11 @@
 import { Clapperboard, Play, Download, RefreshCw, Monitor, Zap } from 'lucide-react';
 import { Button, Card, Textarea, Label, Badge } from '../ui';
+import { MotionBrushPanel } from '../ui/MotionBrushPanel';
+import { NodeGraphEditor } from '../ui/NodeGraphEditor';
+import { PremiumPresetBar, PremiumControlsSummary } from '../generation/PipelineUI';
 import { LOCAL_VIDEO_TEMPLATES } from '../../lib/localVideoTemplates';
 import type { QualityPreset, TemplateId } from '../../lib/videoRenderer';
+import type { VideoControls } from '../../lib/videoControls';
 
 interface HyperframesProps {
   hyperDesc: string;
@@ -19,6 +23,11 @@ interface HyperframesProps {
   onQualityPresetChange: (v: QualityPreset) => void;
   maximizeLocal: boolean;
   onMaximizeLocalChange: (v: boolean) => void;
+  videoControls: VideoControls;
+  onControlsChange: (patch: Partial<VideoControls>) => void;
+  onLoadPreset: (presetId: string) => void;
+  activePresetId: string | null;
+  comfyNote?: string;
 }
 
 export function Hyperframes({
@@ -36,6 +45,11 @@ export function Hyperframes({
   onQualityPresetChange,
   maximizeLocal,
   onMaximizeLocalChange,
+  videoControls,
+  onControlsChange,
+  onLoadPreset,
+  activePresetId,
+  comfyNote,
 }: HyperframesProps) {
   return (
     <div className="max-w-6xl mx-auto">
@@ -95,6 +109,27 @@ export function Hyperframes({
                 />
                 Maximize Local Render (bias planner to Hyperframes + FFmpeg)
               </label>
+
+              <div className="pt-3 border-t border-emerald-500/15 space-y-2">
+                <PremiumPresetBar
+                  activePresetId={activePresetId}
+                  onLoadPreset={onLoadPreset}
+                />
+                <PremiumControlsSummary
+                  controls={videoControls}
+                  activePresetId={activePresetId}
+                  comfyNote={comfyNote}
+                />
+                <MotionBrushPanel
+                  controls={videoControls}
+                  onChange={onControlsChange}
+                  compact
+                />
+                <NodeGraphEditor
+                  controls={videoControls}
+                  onChange={onControlsChange}
+                />
+              </div>
             </div>
 
             <div className="space-y-3">

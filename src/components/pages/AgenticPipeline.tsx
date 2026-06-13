@@ -14,10 +14,19 @@ import {
   VideoOutputPlayer,
   ToolCallTimeline,
   GenerationSkeleton,
+  PremiumGatesPanel,
+  VariantResultsPanel,
+  WorkflowStagesPanel,
+  PremiumControlsSummary,
+  PremiumPresetBar,
 } from '../generation/PipelineUI';
 import { Button, Card, Textarea, Label, ProgressBar, Badge } from '../ui';
+import { MotionBrushPanel } from '../ui/MotionBrushPanel';
+import { NodeGraphEditor } from '../ui/NodeGraphEditor';
 import { LOCAL_VIDEO_TEMPLATES } from '../../lib/localVideoTemplates';
 import type { QualityPreset, TemplateId } from '../../lib/videoRenderer';
+import type { VideoControls } from '../../lib/videoControls';
+import type { WorkflowStageResult } from '../../lib/premiumOrchestrator';
 
 interface AgenticPipelineProps {
   planningModel: string;
@@ -59,6 +68,12 @@ interface AgenticPipelineProps {
   onQualityPresetChange: (v: QualityPreset) => void;
   selectedTemplate: TemplateId | null;
   onTemplateChange: (v: TemplateId | null) => void;
+  videoControls: VideoControls;
+  onControlsChange: (patch: Partial<VideoControls>) => void;
+  onLoadPreset: (presetId: string) => void;
+  activePresetId: string | null;
+  workflowStages?: WorkflowStageResult[];
+  comfyNote?: string;
 }
 
 export function AgenticPipeline({
@@ -100,6 +115,12 @@ export function AgenticPipeline({
   onQualityPresetChange,
   selectedTemplate,
   onTemplateChange,
+  videoControls,
+  onControlsChange,
+  onLoadPreset,
+  activePresetId,
+  workflowStages,
+  comfyNote,
 }: AgenticPipelineProps) {
   const { getPrice } = useModelPricing();
   const hasStarted = agenticState.toolCalls.length > 0 || agenticState.script.length > 0;
@@ -193,6 +214,31 @@ export function AgenticPipeline({
                   <option value="">Custom</option>
                   {LOCAL_VIDEO_TEMPLATES.map(t => <option key={t.id} value={t.id}>{t.label}</option>)}
                 </select>
+              </div>
+
+              <div className="mt-3 pt-3 border-t border-violet-500/15">
+                <PremiumPresetBar
+                  activePresetId={activePresetId}
+                  onLoadPreset={onLoadPreset}
+                  disabled={isBusy}
+                />
+                <PremiumControlsSummary
+                  className="mt-2"
+                  controls={videoControls}
+                  activePresetId={activePresetId}
+                  comfyNote={comfyNote}
+                />
+                <MotionBrushPanel
+                  className="mt-2"
+                  controls={videoControls}
+                  onChange={onControlsChange}
+                  compact
+                />
+                <NodeGraphEditor
+                  className="mt-2"
+                  controls={videoControls}
+                  onChange={onControlsChange}
+                />
               </div>
             </div>
 
@@ -300,6 +346,14 @@ export function AgenticPipeline({
               {agenticState.script && (
                 <ScriptPreview script={agenticState.script} />
               )}
+
+              <WorkflowStagesPanel stages={workflowStages} />
+
+              <PremiumGatesPanel
+                gates={agenticState.premiumGates}
+              />
+
+              <VariantResultsPanel variants={agenticState.variantResults} />
 
               <VoicePreview audioUrl={agenticState.voiceAudioUrl} />
 

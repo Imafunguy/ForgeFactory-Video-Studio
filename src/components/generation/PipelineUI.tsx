@@ -3,7 +3,18 @@ import {
   Brain, Cpu, CheckCircle2, Circle, Loader2, AlertCircle, Pause,
   Image, FileText, Clapperboard, Download, RefreshCw, Copy, Pencil, Mic, Video,
 } from 'lucide-react';
-import type { KeyframeAsset, PipelineStepDef, StepStatus, AgenticToolCall } from '../../lib/pipeline';
+import type {
+  KeyframeAsset,
+  PipelineStepDef,
+  StepStatus,
+  AgenticToolCall,
+  PremiumGateSnapshot,
+  VariantResult,
+} from '../../lib/pipeline';
+import type { WorkflowStageResult } from '../../lib/premiumOrchestrator';
+import type { VideoControls } from '../../lib/videoControls';
+import { listPremiumPresets } from '../../lib/videoControls';
+import { derivePremiumFeelTags } from '../../lib/premiumTestingHarness';
 import { cn } from '../../lib/utils';
 import { Badge, Button, Card, ProgressBar, CostBadge } from '../ui';
 import { ModelPrice } from '../ModelPrice';
@@ -485,6 +496,243 @@ export function GenerationSkeleton() {
         <div className="h-20 bg-white/5 rounded-xl animate-pulse" />
       </div>
     </Card>
+  );
+}
+
+export function PremiumGatesPanel({
+  gates,
+  qualityScore,
+  planRefined,
+  className,
+}: {
+  gates?: PremiumGateSnapshot[];
+  qualityScore?: number;
+  planRefined?: boolean;
+  className?: string;
+}) {
+  if (!gates?.length && qualityScore === undefined) return null;
+
+  const passed = gates?.filter((g) => g.pass).length ?? 0;
+  const total = gates?.length ?? 0;
+  const passRate = total > 0 ? Math.round((passed / total) * 100) : 0;
+
+  return (
+    <Card className={cn('p-5', className)}>
+      <div className="flex items-center gap-2 mb-4">
+        <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+        <h3 className="font-semibold text-white">Premium Gates</h3>
+        {qualityScore !== undefined && (
+          <Badge variant={qualityScore >= 80 ? 'success' : 'warning'} className="ml-auto">
+            Quality {qualityScore}
+          </Badge>
+        )}
+      </div>
+      {planRefined && (
+        <p className="text-[10px] text-amber-400/80 mb-3">Plan auto-refined to pass premium gates</p>
+      )}
+      {gates && gates.length > 0 && (
+        <>
+          <div className="flex items-center justify-between mb-3 text-xs">
+            <span className="text-slate-500">Gate pass rate</span>
+            <span className={cn('font-mono', passRate >= 85 ? 'text-emerald-400' : 'text-amber-400')}>
+              {passed}/{total} ({passRate}%)
+            </span>
+          </div>
+          <div className="space-y-1.5">
+            {gates.map((gate) => (
+              <div
+                key={gate.category}
+                className={cn(
+                  'flex items-start gap-2 p-2 rounded-lg border text-[10px]',
+                  gate.pass ? 'bg-emerald-500/5 border-emerald-500/15' : 'bg-amber-500/5 border-amber-500/15',
+                )}
+              >
+                {gate.pass ? (
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0 mt-0.5" />
+                ) : (
+                  <AlertCircle className="w-3.5 h-3.5 text-amber-400 shrink-0 mt-0.5" />
+                )}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="font-medium text-white">{gate.category}</span>
+                    <span className="text-slate-500">{gate.score}%</span>
+                  </div>
+                  {gate.issues.length > 0 && (
+                    <p className="text-slate-500 mt-0.5">{gate.issues.join(' · ')}</p>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+    </Card>
+  );
+}
+
+export function VariantResultsPanel({
+  variants,
+  className,
+}: {
+  variants?: VariantResult[];
+  className?: string;
+}) {
+  if (!variants || variants.length <= 1) return null;
+
+  return (
+    <Card className={cn('p-5', className)}>
+      <div className="flex items-center gap-2 mb-4">
+        <Copy className="w-4 h-4 text-violet-400" />
+        <h3 className="font-semibold text-white">Variant Critic Pick</h3>
+        <Badge variant="accent" className="ml-auto">{variants.length} variants</Badge>
+      </div>
+      <div className="space-y-2">
+        {variants.map((v) => (
+          <div
+            key={v.id}
+            className={cn(
+              'p-2.5 rounded-xl border text-[10px]',
+              v.selected
+                ? 'bg-violet-500/10 border-violet-500/25'
+                : 'bg-white/[0.02] border-white/[0.06]',
+            )}
+          >
+            <div className="flex items-center justify-between mb-1">
+              <span className="font-medium text-white">
+                Variant {v.id} {v.selected && <span className="text-violet-300">(selected)</span>}
+              </span>
+              <span className="font-mono text-slate-400">Score {v.score}</span>
+            </div>
+            <p className="text-slate-500 line-clamp-2">{v.plan.slice(0, 180)}…</p>
+            <p className="text-slate-600 mt-1">Strategy: {v.strategy}</p>
+          </div>
+        ))}
+      </div>
+    </Card>
+  );
+}
+
+export function WorkflowStagesPanel({
+  stages,
+  className,
+}: {
+  stages?: WorkflowStageResult[];
+  className?: string;
+}) {
+  if (!stages?.length) return null;
+
+  return (
+    <Card className={cn('p-5', className)}>
+      <div className="flex items-center gap-2 mb-4">
+        <Brain className="w-4 h-4 text-indigo-400" />
+        <h3 className="font-semibold text-white">Premium Workflow</h3>
+      </div>
+      <div className="space-y-1">
+        {stages.map((stage) => {
+          const statusKey: StepStatus =
+            stage.status === 'active' || stage.status === 'complete' || stage.status === 'error'
+              ? stage.status
+              : 'pending';
+          const Icon = STATUS_ICON[statusKey === 'error' ? 'error' : statusKey];
+          return (
+            <div
+              key={stage.id}
+              className={cn(
+                'flex items-center gap-2 p-2 rounded-lg text-[10px]',
+                stage.status === 'complete' && 'opacity-90',
+                stage.status === 'active' && 'bg-indigo-500/10 border border-indigo-500/15',
+              )}
+            >
+              <Icon className={cn(
+                'w-3.5 h-3.5 shrink-0',
+                stage.status === 'complete' && 'text-emerald-400',
+                stage.status === 'active' && 'text-indigo-400 animate-spin',
+                stage.status === 'pending' && 'text-slate-700',
+              )} />
+              <div className="flex-1 min-w-0">
+                <span className="font-medium text-white">{stage.label}</span>
+                <span className="text-slate-500 ml-2">{stage.summary}</span>
+              </div>
+              {stage.score !== undefined && (
+                <span className="text-slate-500 font-mono">{stage.score}</span>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </Card>
+  );
+}
+
+export function PremiumControlsSummary({
+  controls,
+  activePresetId,
+  comfyNote,
+  className,
+}: {
+  controls: VideoControls;
+  activePresetId?: string | null;
+  comfyNote?: string;
+  className?: string;
+}) {
+  const tags = derivePremiumFeelTags(controls);
+
+  return (
+    <div className={cn('p-3 rounded-xl border border-emerald-500/20 bg-emerald-500/5 text-[10px] space-y-2', className)}>
+      <div className="flex flex-wrap gap-1">
+        {tags.map((tag) => (
+          <span key={tag} className="px-1.5 py-0.5 rounded bg-emerald-500/15 border border-emerald-500/25 text-emerald-200">
+            {tag}
+          </span>
+        ))}
+        {tags.length === 0 && <span className="text-slate-500">Standard controls</span>}
+      </div>
+      <p className="text-slate-500">
+        {controls.lengthSec}s {controls.aspectRatio} · {controls.cameraStyle} · ref {controls.refConsistencyStrength}%
+        {controls.variantCount > 1 ? ` · ${controls.variantCount} variants` : ''}
+      </p>
+      {activePresetId && <p className="text-emerald-400/70">Preset: {activePresetId}</p>}
+      {comfyNote && <p className="text-slate-600">{comfyNote}</p>}
+    </div>
+  );
+}
+
+export function PremiumPresetBar({
+  activePresetId,
+  onLoadPreset,
+  disabled,
+  className,
+}: {
+  activePresetId?: string | null;
+  onLoadPreset: (id: string) => void;
+  disabled?: boolean;
+  className?: string;
+}) {
+  const presets = listPremiumPresets();
+
+  return (
+    <div className={cn('space-y-2', className)}>
+      <p className="text-[10px] font-semibold text-emerald-300">Premium Feels (one-click)</p>
+      <div className="flex flex-wrap gap-1">
+        {presets.map((p) => (
+          <button
+            key={p.id}
+            type="button"
+            onClick={() => onLoadPreset(p.id)}
+            disabled={disabled}
+            title={p.feel}
+            className={cn(
+              'px-2 py-1 rounded text-[9px] font-medium border transition-all',
+              activePresetId === p.id
+                ? 'bg-emerald-500/25 border-emerald-500/40 text-emerald-100'
+                : 'bg-[#0c1222] border-white/10 text-slate-400 hover:text-emerald-200 hover:border-emerald-500/25',
+            )}
+          >
+            {p.label}
+          </button>
+        ))}
+      </div>
+    </div>
   );
 }
 

@@ -14,7 +14,11 @@ import {
   VideoOutputPlayer,
   StudioEmptyState,
   GenerationSkeleton,
+  PremiumGatesPanel,
+  VariantResultsPanel,
+  WorkflowStagesPanel,
 } from '../generation/PipelineUI';
+import type { WorkflowStageResult } from '../../lib/premiumOrchestrator';
 import { Button, Card, Textarea, Label, Badge } from '../ui';
 import { cn } from '../../lib/utils';
 import { LOCAL_VIDEO_TEMPLATES } from '../../lib/localVideoTemplates';
@@ -76,6 +80,7 @@ interface VideoStudioProps {
   onControlsChange: (patch: Partial<VideoControls>) => void;
   onLoadPreset: (presetId: string) => void;
   activePresetId: string | null;
+  workflowStages?: WorkflowStageResult[];
 }
 
 export function VideoStudio({
@@ -127,6 +132,7 @@ export function VideoStudio({
   onControlsChange,
   onLoadPreset,
   activePresetId,
+  workflowStages,
 }: VideoStudioProps) {
   const { getPrice } = useModelPricing();
   const hasOutput = !!studioOutput;
@@ -365,6 +371,16 @@ export function VideoStudio({
               {studioOutput?.script && (
                 <ScriptPreview script={studioOutput.script} />
               )}
+
+              <WorkflowStagesPanel stages={workflowStages} />
+
+              <PremiumGatesPanel
+                gates={studioOutput?.premiumGates}
+                qualityScore={studioOutput?.qualityScore}
+                planRefined={studioOutput?.planRefined}
+              />
+
+              <VariantResultsPanel variants={studioOutput?.variantResults} />
 
               <VoicePreview audioUrl={studioOutput?.voiceAudioUrl} />
 
