@@ -4,7 +4,7 @@ import {
   VIDEO_API_ALIASES,
   VOICE_API_ALIASES,
 } from './models';
-import type { KeyframeAsset } from './pipeline';
+import type { KeyframeAsset, VariantResult } from './pipeline';
 import type { Project } from './storage';
 import { resolveOpenRouterApiKey } from './storage';
 import {
@@ -12,8 +12,16 @@ import {
   buildKeyframeImagePrompt,
   buildPreRenderRefinementPrompt,
   buildRefinementPrompt,
+  buildVariantPrompt,
+  buildEnrichedCloudVideoPrompt,
   assessPlanQuality,
+  assessControlsGates,
 } from './videoPipelinePrompts';
+import {
+  type VideoControls,
+  DEFAULT_VIDEO_CONTROLS,
+  getCanvasDimensions,
+} from './videoControls';
 
 const OPENROUTER_BASE = 'https://openrouter.ai/api/v1';
 
@@ -283,9 +291,10 @@ export async function generateImagePrompts(
   apiKey: string,
   model = 'black-forest-labs/flux.2-klein-4b',
   project?: Pick<Project, 'name' | 'colors' | 'uiElements' | 'tone'>,
+  controls?: VideoControls,
 ): Promise<string> {
   const content = project
-    ? buildImagePromptsPrompt(project, script, model)
+    ? buildImagePromptsPrompt(project, script, model, controls)
     : `Turn this video script into 5 highly detailed, brand-consistent image/keyframe prompts for ${model}. Number each prompt (1. 2. 3. etc). Each 90+ words: SaaS UI, brand colors, lighting, motion hints, composition. Script: ${script}`;
   return callOpenRouter([{ role: 'user', content }], model, apiKey, 2200, 0.55);
 }
@@ -297,23 +306,76 @@ export async function generatePlanWithQualityGate(
   planningModel: string,
   apiKey: string,
   callPlanner: (prompt: string, model: string) => Promise<string>,
-): Promise<{ plan: string; refined: boolean; qualityScore: number }> {
+  controls?: VideoControls,
+): Promise<{
+  plan: string;
+  refined: boolean;
+  qualityScore: number;
+  premiumGates: ReturnType<typeof assessControlsGates>;
+}> {
+  const c = controls ?? DEFAULT_VIDEO_CONTROLS;
   let plan = initialPlan;
-  const firstCheck = assessPlanQuality(plan);
+  const firstCheck = assessPlanQuality(plan, c);
+  const firstGates = assessControlsGates(plan, c);
+  const gatesFailed = firstGates.some((g) => !g.pass);
+  const gateIssues = firstGates.flatMap((g) => g.issues.map((i) => `${g.category}: ${i}`));
 
-  if (!firstCheck.pass && apiKey?.trim()) {
+  if ((!firstCheck.pass || gatesFailed) && apiKey?.trim()) {
+    const allIssues = [...firstCheck.issues, ...gateIssues];
     const refined = await callPlanner(
-      buildRefinementPrompt(project, plan, firstCheck.issues),
+      buildRefinementPrompt(project, plan, allIssues, c),
       planningModel,
     );
     if (refined.length > plan.length * 0.7) {
       plan = refined;
     }
-    const secondCheck = assessPlanQuality(plan);
-    return { plan, refined: true, qualityScore: secondCheck.score };
+    const secondCheck = assessPlanQuality(plan, c);
+    const secondGates = assessControlsGates(plan, c);
+    return { plan, refined: true, qualityScore: secondCheck.score, premiumGates: secondGates };
   }
 
-  return { plan, refined: false, qualityScore: firstCheck.score };
+  return { plan, refined: false, qualityScore: firstCheck.score, premiumGates: firstGates };
+}
+
+/** Generate variant plans when variantCount > 1. */
+export async function generateVariants(
+  basePlan: string,
+  project: Pick<Project, 'name' | 'colors' | 'uiElements' | 'tone'>,
+  controls: VideoControls,
+  planningModel: string,
+  apiKey: string,
+  callPlanner: (prompt: string, model: string) => Promise<string>,
+): Promise<VariantResult[]> {
+  if (controls.variantCount <= 1 || !apiKey?.trim()) {
+    const score = assessPlanQuality(basePlan, controls).score;
+    return [{ id: 1, plan: basePlan, score, strategy: controls.variantStrategy, selected: true }];
+  }
+
+  const variants: VariantResult[] = [];
+  const count = Math.min(controls.variantCount, 5);
+
+  for (let i = 0; i < count; i++) {
+    const variantPlan = i === 0
+      ? basePlan
+      : await callPlanner(buildVariantPrompt(project, basePlan, controls, i), planningModel);
+    const quality = assessPlanQuality(variantPlan, controls);
+    const gates = assessControlsGates(variantPlan, controls);
+    const gatePenalty = gates.filter((g) => !g.pass).length * 5;
+    variants.push({
+      id: i + 1,
+      plan: variantPlan,
+      score: Math.max(0, quality.score - gatePenalty),
+      strategy: controls.variantStrategy,
+      selected: false,
+    });
+  }
+
+  if (controls.variantStrategy === 'best-critic' || controls.variantStrategy === 'lock-max') {
+    const best = variants.reduce((a, b) => (b.score > a.score ? b : a));
+    return variants.map((v) => ({ ...v, selected: v.id === best.id }));
+  }
+
+  return variants.map((v, i) => ({ ...v, selected: i === 0 }));
 }
 
 /** Quick pre-render approval gate (returns true if approved or gate skipped). */
@@ -324,11 +386,18 @@ export async function runPreRenderQualityGate(
   imagesGenerated: number,
   planningModel: string,
   apiKey: string,
-): Promise<{ approved: boolean; note?: string }> {
-  if (!apiKey?.trim()) return { approved: true };
+  controls?: VideoControls,
+): Promise<{ approved: boolean; note?: string; gateFailures?: string[] }> {
+  const c = controls ?? DEFAULT_VIDEO_CONTROLS;
+  const localGates = assessControlsGates(script, c);
+  const localFailures = localGates.filter((g) => !g.pass).map((g) => g.category);
+
+  if (!apiKey?.trim()) {
+    return { approved: localFailures.length <= 2, gateFailures: localFailures };
+  }
 
   const raw = await callOpenRouter(
-    [{ role: 'user', content: buildPreRenderRefinementPrompt(project, script, keyframeCount, imagesGenerated) }],
+    [{ role: 'user', content: buildPreRenderRefinementPrompt(project, script, keyframeCount, imagesGenerated, c) }],
     planningModel,
     apiKey,
     200,
@@ -340,24 +409,33 @@ export async function runPreRenderQualityGate(
     if (jsonMatch) {
       const parsed = JSON.parse(jsonMatch[0]) as { approved?: boolean; adjustments?: string };
       return {
-        approved: parsed.approved !== false,
+        approved: parsed.approved !== false && localFailures.length <= 2,
         note: parsed.adjustments,
+        gateFailures: [...localFailures, ...(parsed as { gateFailures?: string[] }).gateFailures ?? []],
       };
     }
   } catch {
     // fall through
   }
-  return { approved: true };
+  return { approved: localFailures.length <= 2, gateFailures: localFailures };
 }
 
 export async function generateKeyframeImage(
   prompt: string,
   model: string,
   apiKey: string,
-  options?: { aspectRatio?: string; project?: Pick<Project, 'name' | 'colors' | 'uiElements' | 'tone'>; sceneIndex?: number }
+  options?: {
+    aspectRatio?: string;
+    project?: Pick<Project, 'name' | 'colors' | 'uiElements' | 'tone'>;
+    sceneIndex?: number;
+    controls?: VideoControls;
+  }
 ): Promise<ImageGenResult> {
   const resolvedModel = resolveOpenRouterId(model);
   const modalities = getImageModalities(model);
+  const aspect = options?.controls
+    ? options.controls.aspectRatio === 'custom' ? '16:9' : options.controls.aspectRatio
+    : options?.aspectRatio ?? '16:9';
 
   if (!apiKey?.trim()) {
     return { success: false, model: resolvedModel, error: 'API key required for image generation' };
@@ -373,13 +451,13 @@ export async function generateKeyframeImage(
           {
             role: 'user',
             content: options?.project
-              ? buildKeyframeImagePrompt(options.project, prompt, options.sceneIndex ?? 0)
-              : `Generate a single ultra-high-quality 16:9 marketing keyframe image. Cinematic SaaS UI, sharp readable text, studio lighting, brand-consistent. ${prompt}`,
+              ? buildKeyframeImagePrompt(options.project, prompt, options.sceneIndex ?? 0, options.controls)
+              : `Generate a single ultra-high-quality ${aspect} marketing keyframe image. Cinematic SaaS UI, sharp readable text, studio lighting, brand-consistent. ${prompt}`,
           },
         ],
         modalities,
         image_config: {
-          aspect_ratio: options?.aspectRatio ?? '16:9',
+          aspect_ratio: aspect,
           image_size: options?.project ? '2K' : '1K',
         },
       }),
@@ -417,9 +495,13 @@ export async function generateKeyframeImages(
   apiKey: string,
   onProgress?: (completed: KeyframeAsset[], index: number, total: number) => void,
   project?: Pick<Project, 'name' | 'colors' | 'uiElements' | 'tone'>,
+  controls?: VideoControls,
 ): Promise<KeyframeAsset[]> {
   const total = keyframes.length;
   const results: KeyframeAsset[] = [];
+  const aspect = controls
+    ? controls.aspectRatio === 'custom' ? '16:9' : controls.aspectRatio
+    : '16:9';
 
   for (let i = 0; i < keyframes.length; i++) {
     const kf = keyframes[i];
@@ -430,7 +512,12 @@ export async function generateKeyframeImages(
     ];
     onProgress?.(pending, i, total);
 
-    const result = await generateKeyframeImage(kf.prompt, model, apiKey, { project, sceneIndex: i });
+    const result = await generateKeyframeImage(kf.prompt, model, apiKey, {
+      project,
+      sceneIndex: i,
+      controls,
+      aspectRatio: aspect,
+    });
 
     results.push({
       ...kf,
@@ -464,10 +551,19 @@ export async function generateCloudVideo(
     aspectRatio?: string;
     onStatus?: (info: CloudVideoStatus) => void;
     maxWaitMs?: number;
+    controls?: VideoControls;
+    project?: Pick<Project, 'name' | 'colors' | 'uiElements' | 'tone'>;
+    goal?: string;
   }
 ): Promise<CloudVideoResult> {
   const resolvedModel = resolveVideoModelId(model);
   const maxWait = options?.maxWaitMs ?? 120_000;
+  const controls = options?.controls ?? DEFAULT_VIDEO_CONTROLS;
+  const enrichedPrompt = options?.project && options?.goal
+    ? buildEnrichedCloudVideoPrompt(options.project, options.goal, prompt, controls)
+    : prompt;
+  const aspect = options?.aspectRatio ?? (controls.aspectRatio === 'custom' ? '16:9' : controls.aspectRatio);
+  const duration = options?.duration ?? Math.min(controls.lengthSec, 15);
   const statusHistory: string[] = [];
 
   const emitStatus = (status: string, start: number) => {
@@ -494,10 +590,10 @@ export async function generateCloudVideo(
       headers: openRouterHeaders(apiKey),
       body: JSON.stringify({
         model: resolvedModel,
-        prompt,
-        duration: options?.duration ?? 8,
-        resolution: options?.resolution ?? '720p',
-        aspect_ratio: options?.aspectRatio ?? '16:9',
+        prompt: enrichedPrompt,
+        duration,
+        resolution: options?.resolution ?? (getCanvasDimensions(controls.aspectRatio).height >= 1920 ? '1080p' : '720p'),
+        aspect_ratio: aspect,
       }),
     });
 

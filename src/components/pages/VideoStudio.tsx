@@ -19,6 +19,10 @@ import { Button, Card, Textarea, Label, Badge } from '../ui';
 import { cn } from '../../lib/utils';
 import { LOCAL_VIDEO_TEMPLATES } from '../../lib/localVideoTemplates';
 import type { QualityPreset, TemplateId } from '../../lib/videoRenderer';
+import type { VideoControls } from '../../lib/videoControls';
+import { listPremiumPresets } from '../../lib/videoControls';
+import { MotionBrushPanel } from '../ui/MotionBrushPanel';
+import { NodeGraphEditor } from '../ui/NodeGraphEditor';
 
 type StudioMode = 'guided' | 'oneclick';
 
@@ -68,6 +72,10 @@ interface VideoStudioProps {
   onQualityPresetChange: (v: QualityPreset) => void;
   selectedTemplate: TemplateId | null;
   onTemplateChange: (v: TemplateId | null) => void;
+  videoControls: VideoControls;
+  onControlsChange: (patch: Partial<VideoControls>) => void;
+  onLoadPreset: (presetId: string) => void;
+  activePresetId: string | null;
 }
 
 export function VideoStudio({
@@ -115,10 +123,15 @@ export function VideoStudio({
   onQualityPresetChange,
   selectedTemplate,
   onTemplateChange,
+  videoControls,
+  onControlsChange,
+  onLoadPreset,
+  activePresetId,
 }: VideoStudioProps) {
   const { getPrice } = useModelPricing();
   const hasOutput = !!studioOutput;
   const showWorkspace = hasOutput || isBusy;
+  const premiumPresets = listPremiumPresets();
 
   return (
     <div className="max-w-6xl mx-auto">
@@ -233,6 +246,47 @@ export function VideoStudio({
                 </select>
               </div>
               <div className="text-[10px] text-emerald-300 mt-1">Local render is free. Toggle on for maximum cost savings.</div>
+
+              <div className="mt-3 pt-3 border-t border-emerald-500/15">
+                <p className="text-[10px] font-semibold text-emerald-300 mb-2">Premium Feels (one-click)</p>
+                <div className="flex flex-wrap gap-1">
+                  {premiumPresets.map((p) => (
+                    <button
+                      key={p.id}
+                      type="button"
+                      onClick={() => onLoadPreset(p.id)}
+                      disabled={isBusy}
+                      title={p.feel}
+                      className={cn(
+                        'px-2 py-1 rounded text-[9px] font-medium border transition-all',
+                        activePresetId === p.id
+                          ? 'bg-emerald-500/25 border-emerald-500/40 text-emerald-100'
+                          : 'bg-[#0c1222] border-white/10 text-slate-400 hover:text-emerald-200 hover:border-emerald-500/25',
+                      )}
+                    >
+                      {p.label}
+                    </button>
+                  ))}
+                </div>
+                {activePresetId && (
+                  <p className="text-[9px] text-emerald-400/70 mt-1">
+                    Active: {premiumPresets.find((p) => p.id === activePresetId)?.feel}
+                  </p>
+                )}
+              </div>
+
+              <div className="mt-3 pt-3 border-t border-emerald-500/15">
+                <MotionBrushPanel
+                  controls={videoControls}
+                  onChange={onControlsChange}
+                  compact={false}
+                />
+                <NodeGraphEditor
+                  className="mt-2"
+                  controls={videoControls}
+                  onChange={onControlsChange}
+                />
+              </div>
             </div>
 
             {/* Primary CTA */}

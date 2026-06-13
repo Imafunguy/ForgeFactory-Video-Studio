@@ -21,6 +21,7 @@ import {
   extractNarrationFromScript,
   getLocalRenderBias,
   generatePlanWithQualityGate,
+  generateVariants,
   runPreRenderQualityGate,
 } from './lib/openrouter';
 import {
@@ -36,7 +37,6 @@ import {
   type QualityPreset,
   type TemplateId,
   postProcessWithFFmpeg,
-  TEMPLATE_DURATIONS,
 } from './lib/videoRenderer';
 
 import {
@@ -47,6 +47,15 @@ import {
   getBrandVideoProfile,
   resolveEffectiveModels,
 } from './lib/videoPipelinePrompts';
+import {
+  type VideoControls,
+  DEFAULT_VIDEO_CONTROLS,
+  loadPremiumPreset,
+  mergeControls,
+  mapToRenderer,
+  serializePreset,
+  injectControlsToPrompt,
+} from './lib/videoControls';
 import {
   DEFAULT_IMAGE_MODEL,
   DEFAULT_REASONING_MODEL,
@@ -145,6 +154,8 @@ function App() {
   const [qualityPreset, setQualityPreset] = useState<QualityPreset>(initialPrefs.qualityPreset ?? 'balanced');
   const [selectedTemplate, setSelectedTemplate] = useState<TemplateId | null>(initialPrefs.selectedTemplate ?? null);
   const [targetRes] = useState({ width: 1920, height: 1080, fps: 60 });
+  const [videoControls, setVideoControls] = useState<VideoControls>(DEFAULT_VIDEO_CONTROLS);
+  const [activePresetId, setActivePresetId] = useState<string | null>(null);
 
   const currentProject = projects.find(p => p.id === currentProjectId) || projects[0];
 
@@ -223,11 +234,25 @@ function App() {
     return resolveEffectiveModels(qualityBoost, selectedPlanningModel, selectedImageModel);
   }, [qualityBoost, selectedPlanningModel, selectedImageModel]);
 
-  const getTemplateDurationMs = useCallback((templateId?: TemplateId | null) => {
-    if (templateId) return TEMPLATE_DURATIONS[templateId];
-    const tpl = selectedTemplate;
-    return tpl ? TEMPLATE_DURATIONS[tpl] : 30000;
-  }, [selectedTemplate]);
+  const getTemplateDurationMs = useCallback((_templateId?: TemplateId | null) => {
+    return videoControls.lengthSec * 1000;
+  }, [videoControls.lengthSec]);
+
+  const handleControlsChange = useCallback((patch: Partial<VideoControls>) => {
+    setVideoControls((prev) => mergeControls({ ...prev, ...patch }));
+  }, []);
+
+  const handleLoadPreset = useCallback((presetId: string) => {
+    try {
+      const bundle = loadPremiumPreset(presetId);
+      setVideoControls(bundle.controls);
+      setStudioGoal(bundle.goal);
+      setActivePresetId(presetId);
+      toast.success(`Loaded ${bundle.label} — ${bundle.controls.lengthSec}s ${bundle.controls.aspectRatio}`);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to load preset');
+    }
+  }, []);
 
   const handleQualityPresetChange = (v: QualityPreset) => {
     setQualityPreset(v);
@@ -289,20 +314,22 @@ function App() {
       : { name: 'SaaS', colors: '#6366f1' };
 
     const effectiveTemplate = templateId ?? selectedTemplate;
-    const durationMs = getTemplateDurationMs(effectiveTemplate);
+    const rendererParams = mapToRenderer(videoControls, targetRes.fps);
+    const durationMs = rendererParams.durationMs;
 
     const animation = createSaaSAnimationCanvas(
       container,
       brand,
       desc,
       {
-        width: targetRes.width,
-        height: targetRes.height,
-        fps: targetRes.fps,
+        width: rendererParams.width,
+        height: rendererParams.height,
+        fps: rendererParams.fps,
         templateId: effectiveTemplate ?? undefined,
         qualityPreset,
         durationMs,
         keyframeImages,
+        controls: videoControls,
       }
     );
     setCurrentAnimation(animation);
@@ -313,7 +340,7 @@ function App() {
       previewArea.innerHTML = '';
       previewArea.appendChild(container);
     }
-  }, [currentProject, selectedTemplate, qualityPreset, targetRes, getTemplateDurationMs]);
+  }, [currentProject, selectedTemplate, qualityPreset, targetRes, videoControls]);
 
   const renderVideo = async (
     _source: 'studio' | 'agentic' | 'hyperframes' | 'library',
@@ -374,22 +401,24 @@ function App() {
     toast.info(`Rendering local ${preset} video…`);
 
     try {
-      const recordDuration = getTemplateDurationMs(selectedTemplate);
+      const rendererParams = mapToRenderer(videoControls, targetRes.fps);
+      const recordDuration = rendererParams.durationMs;
       const rawBlob = await currentAnimation.record(recordDuration);
 
       let finalBlob = rawBlob;
       let note = options?.renderNote ?? `Local Hyperframes (${preset})`;
 
       const brand = currentProject
-        ? { name: currentProject.name, accent: currentProject.colors }
-        : { name: 'ForgeFactory', accent: '#6366f1' };
+        ? { name: currentProject.name, accent: currentProject.colors, tagline: getBrandVideoProfile(currentProject).tagline }
+        : { name: 'ForgeFactory', accent: '#6366f1', tagline: 'Marketing preview' };
 
       const postResult = await postProcessWithFFmpeg(rawBlob, {
         preset,
         brand,
         durationMs: recordDuration,
-        width: targetRes.width,
-        height: targetRes.height,
+        width: rendererParams.width,
+        height: rendererParams.height,
+        controls: videoControls,
       });
       finalBlob = postResult.blob;
       note = options?.renderNote ?? postResult.note;
@@ -526,6 +555,7 @@ function App() {
           setAgenticState(prev => ({ ...prev, keyframes: completed }));
         },
         currentProject ?? undefined,
+        videoControls,
       );
 
       const successCount = withImages.filter(k => k.imageUrl).length;
@@ -577,13 +607,14 @@ function App() {
           const { planning: effectivePlanning } = getEffectiveModels();
           const planningMeta = getModelByValue(effectivePlanning);
           const bias = getLocalRenderBias(maximizeLocal);
-          const durationSec = Math.round(getTemplateDurationMs(selectedTemplate) / 1000);
+          const durationSec = videoControls.lengthSec;
           const initialPlan = await callModel(
             buildPlanningPrompt(currentProject, goal, {
               maximizeLocal,
               templateId: selectedTemplate,
               durationSec,
               localBias: bias,
+              controls: videoControls,
             }),
             effectivePlanning,
             3200,
@@ -594,11 +625,30 @@ function App() {
             effectivePlanning,
             apiKey,
             (prompt, model) => callModel(prompt, model, 3200),
+            videoControls,
           );
           script = gated.plan;
+
+          let variantResults = undefined;
+          if (videoControls.variantCount > 1 && apiKey?.trim()) {
+            variantResults = await generateVariants(
+              script,
+              currentProject,
+              videoControls,
+              effectivePlanning,
+              apiKey,
+              (prompt, model) => callModel(prompt, model, 3200),
+            );
+            const selected = variantResults.find((v) => v.selected);
+            if (selected) script = selected.plan;
+            toast.info(`Generated ${variantResults.length} variants (${videoControls.variantStrategy})`);
+          }
+
           if (gated.refined) {
             toast.info(`Plan refined (quality score ${gated.qualityScore})`);
           }
+          const gatesPassed = gated.premiumGates.filter((g) => g.pass).length;
+          toast.info(`Premium gates: ${gatesPassed}/${gated.premiumGates.length} passed`);
           if (qualityBoost) {
             toast.info(`Quality Boost: planning via ${planningMeta?.label ?? effectivePlanning}`);
           }
@@ -613,6 +663,12 @@ function App() {
             voiceAudioUrl: voiceAudioUrl ?? prev?.voiceAudioUrl,
             videoModel: selectedVideoModel,
             voiceModel: selectedVoiceModel,
+            controlsSnapshot: serializePreset(videoControls),
+            activePresetId: activePresetId ?? undefined,
+            qualityScore: gated.qualityScore,
+            planRefined: gated.refined,
+            premiumGates: gated.premiumGates,
+            variantResults,
             renderNote: maximizeLocal
               ? 'Local render mode — cloud video skipped'
               : `Cloud video will use ${getModelByValue(selectedVideoModel)?.label ?? selectedVideoModel}`,
@@ -626,13 +682,14 @@ function App() {
               buildPlanningPrompt(currentProject, goal, {
                 maximizeLocal,
                 templateId: selectedTemplate,
-                durationSec: Math.round(getTemplateDurationMs(selectedTemplate) / 1000),
+                durationSec: videoControls.lengthSec,
                 localBias: getLocalRenderBias(maximizeLocal),
+                controls: videoControls,
               }),
               effectivePlanning,
             );
           }
-          imagePrompts = await generateImagePrompts(script, apiKey, effectiveImage, currentProject);
+          imagePrompts = await generateImagePrompts(script, apiKey, effectiveImage, currentProject, videoControls);
           keyframes = parseKeyframes(imagePrompts);
           if (keyframes.length < 3) {
             keyframes = parseKeyframes(extractKeyframeSection(script));
@@ -658,7 +715,7 @@ function App() {
 
         if (stepId === 'assembly') {
           const tpl = selectedTemplate;
-          hyperDescLocal = extractHyperframesDesc(script, currentProject, tpl);
+          hyperDescLocal = extractHyperframesDesc(script, currentProject, tpl, videoControls);
 
           // When Maximize Local is on, the planner already got the bias — here we just render the rich template
           const kfImages = keyframes
@@ -683,12 +740,13 @@ function App() {
             keyframes.filter(k => k.imageUrl).length,
             getEffectiveModels().planning,
             apiKey,
+            videoControls,
           );
           if (!gate.approved) {
             toast.warning(`Quality gate: ${gate.note ?? 'refining assembly'} — re-running keyframes`);
-            imagePrompts = await generateImagePrompts(script, apiKey, getEffectiveModels().image, currentProject);
+            imagePrompts = await generateImagePrompts(script, apiKey, getEffectiveModels().image, currentProject, videoControls);
             keyframes = await generateKeyframesWithImages(imagePrompts, script);
-            hyperDescLocal = extractHyperframesDesc(script, currentProject, selectedTemplate);
+            hyperDescLocal = extractHyperframesDesc(script, currentProject, selectedTemplate, videoControls);
             generateHyperframesPreview(
               hyperDescLocal,
               'studio-preview-host',
@@ -706,7 +764,10 @@ function App() {
 
           if (!maximizeLocal) {
             const videoMeta = getModelByValue(selectedVideoModel);
-            const cloudPrompt = `${currentProject.name} SaaS marketing video: ${goal}. ${script.slice(0, 400)}`;
+            const cloudPrompt = injectControlsToPrompt(
+              `${currentProject.name} SaaS marketing video: ${goal}. ${script.slice(0, 400)}`,
+              videoControls,
+            );
             toast.info(`Attempting cloud video with ${videoMeta?.label ?? selectedVideoModel}…`);
             setCloudVideoStatus('Submitting cloud video job…');
             const cloudResult = await generateCloudVideo(
@@ -714,6 +775,11 @@ function App() {
               selectedVideoModel,
               apiKey,
               {
+                controls: videoControls,
+                project: currentProject,
+                goal,
+                duration: Math.min(videoControls.lengthSec, 15),
+                aspectRatio: videoControls.aspectRatio === 'custom' ? '16:9' : videoControls.aspectRatio,
                 onStatus: (info) => {
                   setCloudVideoStatus(info.message);
                   toast.info(info.message, { id: 'cloud-video-status' });
@@ -1195,6 +1261,10 @@ function App() {
             onQualityPresetChange={handleQualityPresetChange}
             selectedTemplate={selectedTemplate}
             onTemplateChange={handleTemplateChange}
+            videoControls={videoControls}
+            onControlsChange={handleControlsChange}
+            onLoadPreset={handleLoadPreset}
+            activePresetId={activePresetId}
           />
         );
       case 'agentic':

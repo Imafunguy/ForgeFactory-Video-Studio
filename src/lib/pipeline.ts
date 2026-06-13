@@ -28,6 +28,21 @@ export interface KeyframeAsset {
 
 export type RenderSource = 'local' | 'cloud' | 'cloud-fallback';
 
+export interface VariantResult {
+  id: number;
+  plan: string;
+  score: number;
+  strategy: string;
+  selected: boolean;
+}
+
+export interface PremiumGateSnapshot {
+  category: string;
+  pass: boolean;
+  score: number;
+  issues: string[];
+}
+
 export interface StudioOutput {
   goal: string;
   script: string;
@@ -41,6 +56,13 @@ export interface StudioOutput {
   renderNote?: string;
   videoModel?: string;
   voiceModel?: string;
+  /** Serialized VideoControls snapshot used for this generation */
+  controlsSnapshot?: string;
+  activePresetId?: string;
+  qualityScore?: number;
+  planRefined?: boolean;
+  premiumGates?: PremiumGateSnapshot[];
+  variantResults?: VariantResult[];
 }
 
 export interface AgenticToolCall {
@@ -72,6 +94,10 @@ export interface AgenticState {
   cloudVideoUrl?: string;
   renderSource?: RenderSource;
   renderNote?: string;
+  controlsSnapshot?: string;
+  activePresetId?: string;
+  premiumGates?: PremiumGateSnapshot[];
+  variantResults?: VariantResult[];
 }
 
 export function createInitialStepStatuses(): Record<string, StepStatus> {
