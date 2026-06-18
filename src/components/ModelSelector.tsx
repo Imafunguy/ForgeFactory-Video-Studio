@@ -30,6 +30,9 @@ export function sortModelsForCostTesting(models: ModelOption[]): ModelOption[] {
     if (tierDiff !== 0) return tierDiff;
     if (a.costLabel === 'Free' && b.costLabel !== 'Free') return -1;
     if (b.costLabel === 'Free' && a.costLabel !== 'Free') return 1;
+    if (a.rank !== undefined && b.rank !== undefined && a.rank !== b.rank) {
+      return a.rank - b.rank;
+    }
     if (a.isDefault && !b.isDefault) return -1;
     if (b.isDefault && !a.isDefault) return 1;
     return a.label.localeCompare(b.label);

@@ -9,6 +9,10 @@ import type { TemplateId } from './videoRenderer';
 import { getTemplateLabel } from './localVideoTemplates';
 import { PROJECT_DESCRIPTIONS } from './constants';
 import {
+  buildAiVideoCompositingGuardrailBlock,
+  enforceAiVideoCompositingPrompt,
+} from './localCompositing';
+import {
   type VideoControls,
   type VideoStyle,
   type BrandPalette,
@@ -17,9 +21,16 @@ import {
   injectControlsToPrompt,
   resolveBrandPalette,
 } from './videoControls';
+import {
+  isGrokImagineImageModel,
+  buildBrandLockPrompt,
+  brandKitFromProject,
+  computeEffectiveLockStrength,
+  GROK_IMAGINE_IMAGE_MODEL,
+} from './grokImagineHarness';
 
-export const QUALITY_BOOST_PLANNING_MODEL = 'x-ai/grok-4';
-export const QUALITY_BOOST_IMAGE_MODEL = 'black-forest-labs/flux.2-pro';
+export const QUALITY_BOOST_PLANNING_MODEL = 'x-ai/grok-4.20';
+export const QUALITY_BOOST_IMAGE_MODEL = 'google/gemini-3-pro-image-preview';
 
 export interface BrandVideoProfile {
   hookLine: string;
@@ -151,6 +162,14 @@ ${formatPaletteBlock(palette)}
 FONT FAMILY: ${font} — titles, kinetic text, CTA labels, UI chrome labels
 ${voiceLines.length ? voiceLines.join('\n') + '\n' : ''}LOGO PLACEMENT: ${placement} | Logo lock: ${logoLock}
 ACCENT LOCK: ${accentLock}
+${buildAiVideoCompositingGuardrailBlock({
+  productName: project.name,
+  approvedOverlayText: [project.name],
+  lockedAssetLabels: [
+    project.logoDescription ? `${project.name} logo` : `${project.name} logo lockup`,
+    `${project.name} UI screenshot plates`,
+  ],
+})}
 VIDEO STYLE: ${controls.videoStyle} — follow structure weighting below`;
 }
 
@@ -370,7 +389,7 @@ Exactly 5 numbered prompts (1. 2. 3. 4. 5.) for image generation. Each 80–140 
 - Font style: ${controls.fontFamily ?? 'Inter'} for UI labels and headlines
 - Logo placement hint: ${controls.logoPlacement ?? 'bottom-right'}${controls.logoLock ? ' (locked)' : ''}
 - ${controls.aspectRatio} composition (${dims.width}x${dims.height}), shallow depth of field where appropriate
-- Crisp readable SaaS UI (not blurry mockups)
+- Crisp SaaS UI structure with locked screenshot plates or non-readable placeholder chrome; do not invent mission-critical UI copy
 - Lighting: ${controls.lightingHints ?? 'soft key + rim'} | Lens: ${controls.lensOptics ?? 'standard'}
 - Ref strength ${controls.refConsistencyStrength}% — lock UI elements
 - Motion hint for Hyperframes (${controls.cameraStyle}, ${controls.motionIntensity})
@@ -543,7 +562,7 @@ Each prompt must be 90–150 words and include ALL of:
 - Font: ${c.fontFamily ?? 'Inter'} for all UI text
 - Logo: ${c.logoPlacement ?? 'bottom-right'}${c.logoLock ? ' LOCKED' : ''}
 - Lighting: ${c.lightingHints ?? 'soft studio key + rim'} | Lens: ${c.lensOptics ?? 'standard'}
-- UI clarity: sharp readable text labels, realistic dashboard chrome
+- UI clarity: sharp dashboard structure with locked screenshot plates or non-readable placeholder labels; no invented mission-critical text
 - Motion hint: ${c.cameraStyle} camera, ${c.motionIntensity} — what Hyperframes animates
 - ${c.heroFrameFirst ? 'HERO FRAME: perfect still before motion' : 'Scene role tag'}: [HOOK] [REVEAL] [FEATURE] [PROOF] or [CTA]
 - Physics: ${c.physicsIntensity} weight on interactive elements
@@ -559,8 +578,17 @@ export function buildKeyframeImagePrompt(
   rawPrompt: string,
   sceneIndex: number,
   controls?: VideoControls,
+  imageModel?: string,
 ): string {
   const c = controls ?? DEFAULT_VIDEO_CONTROLS;
+  const useGrokHarness = isGrokImagineImageModel(imageModel ?? '')
+    || (c.brandKitLock.strictBrandLock && c.brandKitLock.enabled);
+
+  if (useGrokHarness) {
+    const brandKit = brandKitFromProject(project, c);
+    return buildBrandLockPrompt(brandKit, c, rawPrompt.trim() || `scene ${sceneIndex + 1}`, sceneIndex);
+  }
+
   const profile = getBrandVideoProfile(project);
   const dims = getCanvasDimensions(c.aspectRatio, c.customAspect);
   const styleRoles: Record<string, string[]> = {
@@ -587,7 +615,7 @@ VISUAL STYLE: ${profile.visualStyle}
 LENS: ${c.lensOptics ?? '50mm standard'} | MOOD: ${c.moodTone}
 REQUIREMENTS:
 - Photoreal or premium 3D-rendered SaaS UI mockup — NOT illustration unless brand-appropriate
-- Crystal-sharp UI text and icons; readable at target resolution
+- Crystal-sharp UI structure and icons; use non-readable placeholder text unless a locked screenshot asset supplies the real UI
 - Cinematic lighting: ${c.lightingHints ?? 'soft key from upper-left'}, subtle gradient backdrop
 - Leave 15% negative space for ${c.textAnimationStyle} motion-graphics overlay
 - ${c.firstLastFrameRefs.start && sceneIndex === 0 ? 'START FRAME ANCHOR — lock composition for continuity' : ''}
@@ -662,7 +690,11 @@ export function extractHyperframesDesc(
     const excerpt = match[1].trim().slice(0, 2000);
     if (controls) {
       const palette = resolveBrandPalette(controls, project.brandPalette ?? project.colors);
-      return `${excerpt}\n[Controls: ${controls.lengthSec}s ${controls.aspectRatio}, style ${controls.videoStyle}, palette PRIMARY ${palette.primary}/ACCENT ${palette.accent}, font ${controls.fontFamily ?? 'Inter'}, camera ${controls.cameraStyle}, motion ${controls.motionIntensity}, logo ${controls.logoPlacement ?? 'bottom-right'}, brush areas: ${controls.motionBrush.areas.length}]`;
+      const grokLock = controls.brandKitLock.enabled || controls.brandKitLock.strictBrandLock
+        ? `, Grok Imagine brand lock ${computeEffectiveLockStrength(controls)}% (${controls.brandKitLock.strictBrandLock ? 'strict' : 'standard'})`
+        : '';
+      const refCount = controls.brandKitLock.brandReferences?.length ?? 0;
+      return `${excerpt}\n[Controls: ${controls.lengthSec}s ${controls.aspectRatio}, style ${controls.videoStyle}, palette PRIMARY ${palette.primary}/ACCENT ${palette.accent}, font ${controls.fontFamily ?? 'Inter'}, camera ${controls.cameraStyle}, motion ${controls.motionIntensity}, logo ${controls.logoPlacement ?? 'bottom-right'}, brush areas: ${controls.motionBrush.areas.length}${grokLock}, brand refs: ${refCount}, keyframe engine: ${GROK_IMAGINE_IMAGE_MODEL}]`;
     }
     return excerpt;
   }
@@ -693,5 +725,12 @@ export function buildEnrichedCloudVideoPrompt(
   controls: VideoControls,
 ): string {
   const base = `${project.name} SaaS marketing video: ${goal}. ${script.slice(0, 400)}`;
-  return injectControlsToPrompt(base, controls);
+  return enforceAiVideoCompositingPrompt(injectControlsToPrompt(base, controls), {
+    productName: project.name,
+    approvedOverlayText: [project.name],
+    lockedAssetLabels: [
+      project.logoDescription ? `${project.name} logo` : `${project.name} logo lockup`,
+      `${project.name} UI screenshot plates`,
+    ],
+  });
 }

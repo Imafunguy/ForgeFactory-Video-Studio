@@ -1,4 +1,4 @@
-import { FlaskConical, Wallet, Sparkles, AlertCircle, RefreshCw, Clock, Info, Download } from 'lucide-react';
+import { FlaskConical, Wallet, Sparkles, AlertCircle, RefreshCw, Clock, Info, Download, FileText } from 'lucide-react';
 import { ModelLabGrid } from '../ModelSelector';
 import { VoiceSelector } from '../VoiceSelector';
 import { Button, Card, CostBadge } from '../ui';
@@ -8,8 +8,12 @@ import {
   DEFAULT_REASONING_MODEL,
   DEFAULT_VIDEO_MODEL,
   DEFAULT_VOICE_MODEL,
+  FORGE_FACTORY_MODEL_COUNT,
+  FORGE_FACTORY_MODELS_DOC,
   getModelByValue,
   generatePricingMarkdown,
+  listForgeFactoryPresets,
+  type PipelinePresetId,
 } from '../../lib/constants';
 import { useModelPricing } from '../../context/ModelPricingContext';
 import { toast } from 'sonner';
@@ -30,6 +34,7 @@ interface ModelLabProps {
   onVoicePreview?: (voiceId: string) => Promise<void>;
   voicePreviewLoading?: boolean;
   onMaximizeLocalChange: (v: boolean) => void;
+  onApplyPreset: (presetId: PipelinePresetId) => void;
 }
 
 export function ModelLab({
@@ -48,7 +53,9 @@ export function ModelLab({
   onVoicePreview,
   voicePreviewLoading,
   onMaximizeLocalChange,
+  onApplyPreset,
 }: ModelLabProps) {
+  const forgeFactoryPresets = listForgeFactoryPresets();
   const {
     getPrice,
     isLoading,
@@ -84,11 +91,11 @@ export function ModelLab({
             <div className="flex-1">
               <h2 className="text-lg font-bold text-white">Model Lab</h2>
               <p className="text-sm text-slate-500 mt-1 leading-relaxed">
-                Cost-conscious defaults for everyday work. Live OpenRouter prices shown next to each model.
-                Video and Voice selections apply to Video Studio and Agentic Pipeline.
+                {FORGE_FACTORY_MODEL_COUNT} curated models from {FORGE_FACTORY_MODELS_DOC}. Live OpenRouter
+                prices shown next to each model. Video and Voice selections apply to Video Studio and Agentic Pipeline.
               </p>
               <p className="text-[11px] text-slate-500 mt-2 leading-relaxed">
-                Free = $0 or very low / Value = daily use sweet spot / Premium = max quality
+                Free / near-free · Good value (daily) · Medium · Premium (high-end)
               </p>
             </div>
           </div>
@@ -153,8 +160,8 @@ export function ModelLab({
           <div>
             <h3 className="text-sm font-semibold text-amber-200 mb-1">OpenRouter billing</h3>
             <p className="text-xs text-slate-500 leading-relaxed">
-              Every model charges your OpenRouter balance per use. Use Kimi K2 and Flux Schnell for daily work
-              to keep costs low. Premium models cost more per generation.
+              Every model charges your OpenRouter balance per use. Use the Best Value preset for daily work.
+              Premium models cost more per generation.
             </p>
           </div>
         </div>
@@ -182,7 +189,7 @@ export function ModelLab({
             <p className="text-sm font-semibold text-emerald-200">Quality Boost</p>
             <p className="text-xs text-slate-500 mt-1 leading-relaxed">
               {qualityBoost
-                ? 'ON — planning uses Grok Heavy, keyframes use Flux Pro (toggle in Video Studio / Agentic Pipeline).'
+                ? 'ON — planning uses Grok 4.20, keyframes use Gemini 3 Pro Image (toggle in Video Studio / Agentic Pipeline).'
                 : 'OFF — uses your selected Reasoning + Image models. Enable in Video Studio for hero renders.'}
             </p>
           </div>
@@ -210,11 +217,47 @@ export function ModelLab({
         ))}
       </div>
 
+      <Card className="p-5 border-indigo-500/15">
+        <div className="flex items-start justify-between gap-4 mb-4">
+          <div>
+            <h3 className="font-semibold text-white">ForgeFactoryModels.md Presets</h3>
+            <p className="text-xs text-slate-500 mt-1">
+              One-click stacks from the production model guide — {FORGE_FACTORY_MODEL_COUNT} models total.
+            </p>
+          </div>
+          <Button
+            variant="secondary"
+            size="sm"
+            icon={FileText}
+            onClick={() => onApplyPreset('best-value-promo')}
+          >
+            Load from ForgeFactoryModels.md
+          </Button>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          {forgeFactoryPresets.map((preset) => (
+            <button
+              key={preset.id}
+              type="button"
+              onClick={() => onApplyPreset(preset.id)}
+              className="text-left p-4 rounded-xl border border-white/[0.08] hover:border-indigo-500/30 hover:bg-indigo-500/[0.04] transition-all"
+            >
+              <p className="text-sm font-semibold text-white">{preset.label}</p>
+              <p className="text-[10px] text-slate-500 mt-1 leading-relaxed">{preset.description}</p>
+              <p className="text-[10px] text-indigo-300/80 mt-2 font-mono leading-relaxed">
+                {preset.models.reasoning.split('/').pop()} · {preset.models.image.split('/').pop()} ·{' '}
+                {preset.models.video.split('/').pop()} · {preset.models.voice.split('/').pop()}
+              </p>
+            </button>
+          ))}
+        </div>
+      </Card>
+
       {usingValueDefaults && (
         <div className="flex items-center gap-2 px-4 py-3 rounded-xl bg-emerald-500/5 border border-emerald-500/15">
           <Sparkles className="w-4 h-4 text-emerald-400 shrink-0" />
           <p className="text-xs text-emerald-400/90">
-            Using recommended defaults — Kimi K2, Flux Schnell, Seedance Fast, Grok Voice.
+            Using Best Value defaults — Qwen3.6 Plus, Gemini 2.5 Flash Image, Hailuo 2.3, GPT Audio Mini.
           </p>
         </div>
       )}

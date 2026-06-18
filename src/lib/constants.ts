@@ -41,6 +41,28 @@ export {
   ensureCoverageForCurrent,
 } from './modelPricing';
 
+export {
+  type PipelineModelStack,
+  type PipelinePresetId,
+  type VideoModelJob,
+  PIPELINE_MODEL_STACKS,
+  getPipelineStack,
+  listPipelineStacks,
+  selectVideoModel,
+} from './modelRouting';
+
+export {
+  type ForgeFactoryPresetStack,
+  type ForgeFactoryModelStackSelection,
+  FORGE_FACTORY_MODELS_DOC,
+  FORGE_FACTORY_MODEL_COUNT,
+  FORGE_FACTORY_PRESETS,
+  listForgeFactoryPresets,
+  getForgeFactoryPreset,
+  applyForgeFactoryPreset,
+  validateForgeFactoryCatalog,
+} from './forgeFactoryModelCatalog';
+
 export interface TabDef {
   id: string;
   label: string;

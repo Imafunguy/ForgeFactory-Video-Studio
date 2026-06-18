@@ -6,6 +6,8 @@ import {
   resolveOpenRouterApiKey,
   loadModelPreferences, saveModelPreferences,
   loadCustomBrandKits, saveCustomBrandKit,
+  loadBrandReferences, saveBrandReferences,
+  migrateProject,
 } from './lib/storage';
 import type { Project, Generation, SavedBrandKit } from './lib/storage';
 import {
@@ -67,13 +69,22 @@ import {
 } from './lib/videoControls';
 import { deriveBrandPaletteFromColor } from './lib/storage';
 import {
+  generateBrandedKeyframes,
+  runGrokImagineBrandLockTest,
+  brandKitFromProject,
+  GROK_IMAGINE_IMAGE_MODEL,
+} from './lib/grokImagineHarness';
+import type { BrandReferenceAsset } from './lib/videoControls';
+import {
   DEFAULT_IMAGE_MODEL,
   DEFAULT_REASONING_MODEL,
   DEFAULT_VIDEO_MODEL,
   DEFAULT_VOICE_MODEL,
+  applyForgeFactoryPreset,
   getModelByValue,
   getDefaultVoiceForModel,
   getVoicesForModel,
+  type PipelinePresetId,
 } from './lib/constants';
 import {
   STUDIO_PIPELINE_STEPS,
@@ -168,7 +179,14 @@ function App() {
     const loaded = loadProjects();
     const id = loadCurrentProjectId() || loaded[0]?.id;
     const project = loaded.find((p) => p.id === id) || loaded[0];
-    return project ? mergeControls(getControlsFromProject(project)) : DEFAULT_VIDEO_CONTROLS;
+    if (!project) return DEFAULT_VIDEO_CONTROLS;
+    const savedRefs = loadBrandReferences(project.id);
+    return mergeControls({
+      ...getControlsFromProject(project),
+      ...(savedRefs.length
+        ? { brandKitLock: { enabled: false, lockStrength: 70, brandReferences: savedRefs } }
+        : {}),
+    });
   });
   const [activePresetId, setActivePresetId] = useState<string | null>(null);
   const [workflowStages, setWorkflowStages] = useState<WorkflowStageResult[]>([]);
@@ -178,12 +196,16 @@ function App() {
   const currentProject = projects.find(p => p.id === currentProjectId) || projects[0];
 
   const applyProjectBrandToControls = useCallback((project: Project) => {
+    const savedRefs = loadBrandReferences(project.id);
     setVideoControls((prev) => {
       const brandPatch = getControlsFromProject(project);
+      const refPatch = savedRefs.length
+        ? { brandKitLock: { ...prev.brandKitLock, brandReferences: savedRefs } }
+        : {};
       if (prev.accentLock === false) {
-        return mergeControls({ ...prev, fontFamily: brandPatch.fontFamily });
+        return mergeControls({ ...prev, fontFamily: brandPatch.fontFamily, ...refPatch });
       }
-      return mergeControls({ ...prev, ...brandPatch });
+      return mergeControls({ ...prev, ...brandPatch, ...refPatch });
     });
   }, []);
 
@@ -196,8 +218,9 @@ function App() {
   };
 
   const updateProjects = (newProjects: Project[]) => {
-    setProjects(newProjects);
-    saveProjects(newProjects);
+    const migrated = newProjects.map(migrateProject);
+    setProjects(migrated);
+    saveProjects(migrated);
   };
 
   const handleSaveProjectBrandDefault = useCallback((palette: BrandPalette, fontFamily: string) => {
@@ -256,6 +279,12 @@ function App() {
     );
     toast.success(`Loaded kit "${kit.name}"`);
   }, []);
+
+  const handleSaveBrandReferences = useCallback((refs: BrandReferenceAsset[]) => {
+    if (!currentProject) return;
+    saveBrandReferences(currentProject.id, refs);
+    toast.success(`Saved ${refs.length} brand reference${refs.length === 1 ? '' : 's'} for ${currentProject.name}`);
+  }, [currentProject]);
 
   const appendGeneration = (gen: Generation) => {
     setGenerations(prev => {
@@ -316,6 +345,29 @@ function App() {
     setQualityBoost(v);
     persistModelChoice({ qualityBoost: v });
   };
+
+  const handleApplyModelPreset = useCallback((presetId: PipelinePresetId) => {
+    const stack = applyForgeFactoryPreset(presetId);
+    setSelectedPlanningModel(stack.planningModel);
+    setSelectedImageModel(stack.imageModel);
+    setSelectedVideoModel(stack.videoModel);
+    setSelectedVoiceModel(stack.voiceModel);
+    const voiceId = resolveTtsVoice(
+      resolveVoiceModelId(stack.voiceModel),
+      getDefaultVoiceForModel(stack.voiceModel),
+    );
+    setSelectedVoiceId(voiceId);
+    persistModelChoice({
+      planningModel: stack.planningModel,
+      imageModel: stack.imageModel,
+      videoModel: stack.videoModel,
+      voiceModel: stack.voiceModel,
+      voiceId,
+    });
+    toast.success('Loaded preset from ForgeFactoryModels.md', {
+      description: `${stack.planningModel.split('/').pop()} · ${stack.imageModel.split('/').pop()} · ${stack.videoModel.split('/').pop()} · ${stack.voiceModel.split('/').pop()}`,
+    });
+  }, []);
 
   const getEffectiveModels = useCallback(() => {
     return resolveEffectiveModels(qualityBoost, selectedPlanningModel, selectedImageModel);
@@ -383,6 +435,7 @@ function App() {
         maximizeLocal,
         templateId: selectedTemplate,
         presetId: activePresetId,
+        videoModel: selectedVideoModel,
       },
       {
         planningModel: effectivePlanning,
@@ -415,6 +468,7 @@ function App() {
     maximizeLocal,
     selectedTemplate,
     activePresetId,
+    selectedVideoModel,
     apiKey,
     getEffectiveModels,
     callModel,
@@ -487,6 +541,102 @@ function App() {
       previewArea.appendChild(container);
     }
   }, [currentProject, selectedTemplate, qualityPreset, targetRes, videoControls]);
+
+  const applyGrokKeyframesToStudio = useCallback((keyframes: ReturnType<typeof parseKeyframes>, hyperDesc?: string) => {
+    const imagePrompts = keyframes.map((k) => `${k.id}. ${k.prompt}`).join('\n');
+    const resolvedHyper = hyperDesc
+      ?? (currentProject
+        ? extractHyperframesDesc(imagePrompts, currentProject, selectedTemplate, videoControls)
+        : '');
+    setStudioOutput((prev) => ({
+      goal: prev?.goal ?? studioGoal,
+      script: prev?.script ?? '',
+      imagePrompts,
+      hyperDesc: resolvedHyper,
+      keyframes,
+      timestamp: getTimestamp(),
+    }));
+    setAgenticState((prev) => ({ ...prev, keyframes, imagePrompts }));
+    const kfImages = keyframes.map((k) => k.imageUrl).filter((u): u is string => !!u);
+    if (kfImages.length > 0) {
+      generateHyperframesPreview(resolvedHyper, 'studio-preview-host', selectedTemplate, kfImages);
+    }
+  }, [studioGoal, currentProject, selectedTemplate, videoControls, generateHyperframesPreview]);
+
+  const handleGenerateGrokKeyframes = useCallback(async () => {
+    if (!currentProject) { toast.error('Select a project first'); return; }
+    if (!apiKey?.trim()) { toast.error('OpenRouter API key required'); return; }
+
+    const goal = studioGoal.trim() || `Branded ${currentProject.name} marketing keyframes`;
+    setKeyframesGenerating(true);
+    toast.info('Generating keyframes with Grok Imagine + full brand lock…');
+
+    try {
+      const grokControls = mergeControls({
+        ...videoControls,
+        brandKitLock: {
+          ...videoControls.brandKitLock,
+          enabled: true,
+          strictBrandLock: videoControls.brandKitLock.strictBrandLock ?? true,
+        },
+      });
+      const brandKit = brandKitFromProject(currentProject, grokControls);
+      const model = selectedImageModel.includes('grok-imagine-image')
+        ? selectedImageModel
+        : GROK_IMAGINE_IMAGE_MODEL;
+      const keyframes = await generateBrandedKeyframes(
+        grokControls,
+        brandKit,
+        goal,
+        5,
+        apiKey,
+        {
+          model,
+          onProgress: (completed) => {
+            setStudioOutput((prev) => prev ? { ...prev, keyframes: completed } : prev);
+          },
+        },
+      );
+      applyGrokKeyframesToStudio(keyframes);
+      const ok = keyframes.filter((k) => k.imageUrl).length;
+      if (ok > 0) {
+        toast.success(`${ok}/${keyframes.length} Grok Imagine keyframes generated`);
+        setStudioStepStatuses((prev) => ({ ...prev, keyframes: 'complete', assembly: 'complete' }));
+      } else {
+        toast.warning('Grok Imagine keyframe generation failed — check API key and model');
+      }
+    } finally {
+      setKeyframesGenerating(false);
+    }
+  }, [currentProject, apiKey, studioGoal, videoControls, selectedImageModel, applyGrokKeyframesToStudio]);
+
+  const handleGrokBrandLockTest = useCallback(async () => {
+    if (!currentProject) { toast.error('Select a project first'); return; }
+    if (!apiKey?.trim()) { toast.error('OpenRouter API key required'); return; }
+
+    setKeyframesGenerating(true);
+    toast.info(`Running Grok Imagine Brand Lock Test for ${currentProject.name}…`);
+
+    try {
+      const keyframes = await runGrokImagineBrandLockTest(currentProject, videoControls, apiKey, {
+        onProgress: (completed) => {
+          setStudioOutput((prev) => prev ? { ...prev, keyframes: completed } : prev);
+        },
+      });
+      applyGrokKeyframesToStudio(keyframes);
+      const ok = keyframes.filter((k) => k.imageUrl).length;
+      if (ok === 4) {
+        toast.success('Brand Lock Test passed — 4 consistent keyframes generated');
+      } else if (ok > 0) {
+        toast.warning(`Brand Lock Test partial — ${ok}/4 keyframes generated`);
+      } else {
+        toast.error('Brand Lock Test failed — no keyframes generated');
+      }
+      setStudioStepStatuses((prev) => ({ ...prev, keyframes: ok > 0 ? 'complete' : 'error', assembly: ok > 0 ? 'complete' : prev.assembly }));
+    } finally {
+      setKeyframesGenerating(false);
+    }
+  }, [currentProject, apiKey, videoControls, applyGrokKeyframesToStudio]);
 
   const renderVideo = async (
     _source: 'studio' | 'agentic' | 'hyperframes' | 'library',
@@ -672,7 +822,7 @@ function App() {
         voicePreviewUrlRef.current = result.url;
         await audio.play();
         if (result.fallbackUsed) {
-          toast.info('Gemini TTS unavailable — played Grok Voice sample instead.');
+          toast.info('Selected TTS route unavailable - played Grok Voice sample instead.');
         } else {
           toast.success(`Playing ${voice?.label ?? voiceId} preview`);
         }
@@ -804,6 +954,9 @@ function App() {
             planRefined: orchestrated.planRefined,
             premiumGates: orchestrated.premiumGates,
             variantResults: orchestrated.variantResults,
+            storyboard: orchestrated.storyboardJson,
+            evaluationReport: orchestrated.evaluationReport,
+            renderQueue: orchestrated.renderQueue,
             renderNote: maximizeLocal
               ? `Local render mode — ${orchestrated.comfyPayload.exportNote}`
               : `Cloud video will use ${getModelByValue(selectedVideoModel)?.label ?? selectedVideoModel}`,
@@ -830,6 +983,7 @@ function App() {
             keyframes = parseKeyframes(extractKeyframeSection(script));
           }
           setStudioOutput(prev => ({
+            ...prev,
             goal,
             script: prev?.script || script,
             imagePrompts,
@@ -839,6 +993,7 @@ function App() {
           }));
           keyframes = await generateKeyframesWithImages(imagePrompts, script, effectiveImage);
           setStudioOutput(prev => ({
+            ...prev,
             goal,
             script: prev?.script || script,
             imagePrompts,
@@ -858,6 +1013,7 @@ function App() {
             .filter((u): u is string => !!u);
           generateHyperframesPreview(hyperDescLocal, 'studio-preview-host', tpl, kfImages);
           setStudioOutput(prev => ({
+            ...prev,
             goal,
             script: prev?.script || script,
             imagePrompts: prev?.imagePrompts || imagePrompts,
@@ -1114,6 +1270,9 @@ function App() {
         activePresetId: orchestrated.activePresetId,
         premiumGates: orchestrated.premiumGates,
         variantResults: orchestrated.variantResults,
+        storyboard: orchestrated.storyboardJson,
+        evaluationReport: orchestrated.evaluationReport,
+        renderQueue: orchestrated.renderQueue,
       }));
       return {
         ...state,
@@ -1126,6 +1285,9 @@ function App() {
         activePresetId: orchestrated.activePresetId,
         premiumGates: orchestrated.premiumGates,
         variantResults: orchestrated.variantResults,
+        storyboard: orchestrated.storyboardJson,
+        evaluationReport: orchestrated.evaluationReport,
+        renderQueue: orchestrated.renderQueue,
       };
     }
 
@@ -1397,6 +1559,9 @@ function App() {
             onSaveProjectBrandDefault={handleSaveProjectBrandDefault}
             onSaveCustomBrandKit={handleSaveCustomBrandKit}
             onLoadCustomBrandKit={handleLoadCustomBrandKit}
+            onSaveBrandReferences={handleSaveBrandReferences}
+            onGenerateGrokKeyframes={handleGenerateGrokKeyframes}
+            onGrokBrandLockTest={handleGrokBrandLockTest}
             onGenerateFull={() => runStudioPipeline('oneclick')}
             onGenerateGuided={() => runStudioPipeline('guided')}
             onRenderVideo={runStudioRenderOnly}
@@ -1505,6 +1670,7 @@ function App() {
             onVoicePreview={previewVoice}
             voicePreviewLoading={voicePreviewLoading}
             onMaximizeLocalChange={handleMaximizeLocalChange}
+            onApplyPreset={handleApplyModelPreset}
           />
         );
       case 'hyperframes':

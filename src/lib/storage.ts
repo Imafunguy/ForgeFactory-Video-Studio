@@ -3,6 +3,14 @@ import {
   isLegacyClubCensusPalette,
   type FullBrandKit,
 } from './brandKits';
+import {
+  createProjectProductionBundle,
+  type CampaignBrief,
+  type FeatureManifest,
+  type ProductionBrandKit,
+  type Storyboard,
+} from './productionSchema';
+import type { BrandReferenceAsset } from './videoControls';
 
 export interface Project {
   id: string;
@@ -19,6 +27,10 @@ export interface Project {
   brandVoice?: string;
   personality?: string;
   values?: string;
+  campaignBrief?: CampaignBrief;
+  featureManifest?: FeatureManifest;
+  productionBrandKit?: ProductionBrandKit;
+  storyboard?: Storyboard;
 }
 
 export interface SavedBrandKit {
@@ -34,6 +46,7 @@ export interface SavedBrandKit {
 }
 
 const CUSTOM_BRAND_KITS_KEY = 'ff_v2_custom_brand_kits';
+const BRAND_REFERENCES_KEY = 'ff_v2_brand_references';
 
 const DEFAULT_PROJECT_PALETTES: Record<string, string[]> = {
   p_stratabody: ['#4F46E5', '#6366F1', '#818CF8', '#0F172A', '#1E293B', '#E2E8F0'],
@@ -77,6 +90,8 @@ export function migrateProject(project: Project): Project {
   ) {
     migrated = applyFullBrandKitToProject(migrated, CLUBCENSUS_BRAND_KIT);
   }
+  const production = createProjectProductionBundle(migrated, migrated);
+  migrated = { ...migrated, ...production };
   return migrated;
 }
 
@@ -119,6 +134,30 @@ export function deleteCustomBrandKit(id: string): SavedBrandKit[] {
   return next;
 }
 
+type BrandReferenceStore = Record<string, BrandReferenceAsset[]>;
+
+function loadBrandReferenceStore(): BrandReferenceStore {
+  try {
+    const saved = localStorage.getItem(BRAND_REFERENCES_KEY);
+    return saved ? (JSON.parse(saved) as BrandReferenceStore) : {};
+  } catch {
+    return {};
+  }
+}
+
+export function loadBrandReferences(projectId: string): BrandReferenceAsset[] {
+  if (!projectId) return [];
+  return loadBrandReferenceStore()[projectId] ?? [];
+}
+
+export function saveBrandReferences(projectId: string, refs: BrandReferenceAsset[]): BrandReferenceAsset[] {
+  if (!projectId) return refs;
+  const store = loadBrandReferenceStore();
+  store[projectId] = refs;
+  localStorage.setItem(BRAND_REFERENCES_KEY, JSON.stringify(store));
+  return refs;
+}
+
 function migrateProjects(projects: Project[]): Project[] {
   return projects.map(migrateProject);
 }
@@ -145,6 +184,7 @@ import {
   DEFAULT_VIDEO_MODEL,
   DEFAULT_VOICE_MODEL,
   getDefaultVoiceForModel,
+  getModelByValue,
 } from './constants';
 import type { QualityPreset, TemplateId } from './videoRenderer';
 
@@ -189,8 +229,18 @@ export function loadModelPreferences(): ModelPreferences {
     const parsed = JSON.parse(saved) as Partial<ModelPreferences>;
     const merged = { ...DEFAULT_MODEL_PREFS, ...parsed };
     if (!merged.voiceSelections) merged.voiceSelections = {};
-    if (!merged.voiceId) {
-      merged.voiceId = merged.voiceSelections[merged.voiceModel] ?? getDefaultVoiceForModel(merged.voiceModel);
+    if (!getModelByValue(merged.planningModel)) merged.planningModel = DEFAULT_REASONING_MODEL;
+    if (!getModelByValue(merged.imageModel)) merged.imageModel = DEFAULT_IMAGE_MODEL;
+    if (!getModelByValue(merged.videoModel)) merged.videoModel = DEFAULT_VIDEO_MODEL;
+    if (!getModelByValue(merged.voiceModel)?.voices) {
+      merged.voiceModel = DEFAULT_VOICE_MODEL;
+    }
+    const validVoices = getModelByValue(merged.voiceModel)?.voices ?? [];
+    const savedVoice = merged.voiceSelections[merged.voiceModel] ?? merged.voiceId;
+    if (!savedVoice || !validVoices.some((v) => v.id === savedVoice)) {
+      merged.voiceId = getDefaultVoiceForModel(merged.voiceModel);
+    } else {
+      merged.voiceId = savedVoice;
     }
     return merged;
   } catch {
@@ -214,7 +264,7 @@ export function loadProjects(): Project[] {
     }
     return migrated;
   }
-  const defaults: Project[] = [
+  const defaults: Project[] = migrateProjects([
     {
       id: 'p_stratabody',
       name: 'StrataBody',
@@ -234,13 +284,13 @@ export function loadProjects(): Project[] {
       tone: 'fast, practical, trustworthy',
     },
     projectFromBrandKit(CLUBCENSUS_BRAND_KIT, { id: 'p_clubcensus', name: 'ClubCensus' }),
-  ];
+  ]);
   localStorage.setItem(PROJECTS_KEY, JSON.stringify(defaults));
   return defaults;
 }
 
 export function saveProjects(projects: Project[]) {
-  localStorage.setItem(PROJECTS_KEY, JSON.stringify(projects));
+  localStorage.setItem(PROJECTS_KEY, JSON.stringify(migrateProjects(projects)));
 }
 
 export function loadGenerations(): Generation[] {
